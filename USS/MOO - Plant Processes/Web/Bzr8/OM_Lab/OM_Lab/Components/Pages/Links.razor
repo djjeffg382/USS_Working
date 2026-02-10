@@ -1,0 +1,175 @@
+﻿@page "/links"
+@rendermode InteractiveServer
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Security.Cryptography
+
+<PageTitle>@Util.PROGRAM_TITLE - Links</PageTitle>
+
+
+
+
+<CascadingAuthenticationState>
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-6 col-12">
+
+            <RadzenPanel AllowCollapse="true" Style="margin: 40px auto;" Collapsed="true">
+                <HeaderTemplate>
+                    <h4 class="m-0 d-flex align-items-center">
+                        Input
+                    </h4>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenLink Path="/apps/plo_admin/view/trainschedule.aspx" Text="PLO Admin" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-lims24.mno.uss.com:9010/" Text="Sample Manager Web" Target="_blank" /><br />
+                </ChildContent>
+            </RadzenPanel>
+            <RadzenPanel AllowCollapse="true" Style="margin: 40px auto;" Collapsed="true">
+                <HeaderTemplate>
+                    <h4 class="m-0 d-flex align-items-center">
+                        Oracle Ore Movement
+                    </h4>
+                </HeaderTemplate>
+
+
+                <ChildContent>
+                    <br />
+                    <AuthorizeView Roles="Admin,M_OM_COOR,M_OM_MGR">
+                        <Authorized>
+                            <h5>OreM</h5>
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Cargo.fmx&otherparams=iisid={Iis_Id}") Text="Assign Cargo" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Boat.fmx&otherparams=iisid={Iis_Id}") Text="Boat Loading" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Blockx.fmx&otherparams=iisid={Iis_Id}") Text="Build Blocks" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Specs.fmx&otherparams=iisid={Iis_Id}") Text="Cargo Specification" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Cut.fmx&otherparams=iisid={Iis_Id}") Text="Cut Waybills" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Shipl.fmx&otherparams=iisid={Iis_Id}") Text="Dock Facilities" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\bill_test.fmx&otherparams=iisid={Iis_Id}") Text="Gravity Dock Loader" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Wbill.fmx&otherparams=iisid={Iis_Id}") Text="Input Waybills" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Pifile.fmx&otherparams=iisid={Iis_Id}") Text="Pellet Inventories" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Trans.fmx&otherparams=iisid={Iis_Id}") Text="Stockpile and Cargoes" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Stockpile.fmx&otherparams=iisid={Iis_Id}") Text="Stockpiles" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\autos.fmx&otherparams=iisid={Iis_Id}") Text="Surge Pile Auto Transfer" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Autob.fmx&otherparams=iisid={Iis_Id}") Text="Vessel Auto Loading" Target="_blank" /><br />
+                            <br />
+
+                            <h5>OreM Admin</h5>
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Blockn.fmx&otherparams=iisid={Iis_Id}") Text="Blocks" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Customer.fmx&otherparams=iisid={Iis_Id}") Text="Customers" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Location.fmx&otherparams=iisid={Iis_Id}") Text="Locations" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Pocket.fmx&otherparams=iisid={Iis_Id}") Text="Pocket..Grade..Dock" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Vessel.fmx&otherparams=iisid={Iis_Id}") Text="Vessels" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Waybill.fmx&otherparams=iisid={Iis_Id}") Text="Waybills" Target="_blank" /><br />
+                            <br />
+
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView Roles="Admin,M_OM_ACCT">
+                        <Authorized>
+                            <h5>Minntac OreM Invoice</h5>
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Ltrain_inv.fmx&otherparams=iisid={Iis_Id}") Text="Dock Trains by Waybill" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Edit_inv.fmx&otherparams=iisid={Iis_Id}") Text="Edit Invoice Table" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\RTI.fmx&otherparams=iisid={Iis_Id}") Text="Input REP, WEI Consumption" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Invoice.fmx&otherparams=iisid={Iis_Id}") Text="Invoice Pellets" Target="_blank" /><br />
+                            <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Sales.fmx&otherparams=iisid={Iis_Id}") Text="Misc Pellet Sales" Target="_blank" /><br />
+                        </Authorized>
+                    </AuthorizeView>
+                </ChildContent>
+            </RadzenPanel>
+        </div>
+
+        <div class="col-xl-4 col-lg-6 col-12">
+            <RadzenPanel AllowCollapse="true" Style="margin: 40px auto;" Collapsed="true">
+                <HeaderTemplate>
+                    <h4 class="m-0 d-flex align-items-center">
+                        Reports
+                    </h4>
+                </HeaderTemplate>
+                <ChildContent>
+                    <h5>Ore Movement</h5>
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/browse/Minnesota%20Ore%20Operations/Ore%20Movement" Text="Ore Movement Reports List" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/Cargo%20Shipments" Text="Cargo Shipments" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/MTC%20All%20Rail%20Customer" Text="Mtc All Rail Customer" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/Cargo%20Shipment%20Summary" Text="Cargo Shipment Summary" Target="_blank" /><br />
+                    <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=orem\\Dir_ore.fmx&otherparams=iisid={Iis_Id}") Text="Dock Inventory" Target="_blank" /><br />
+                    <RadzenLink Path=@($"/OraFR_Redirect.aspx?form=met_flux_added.fmx&otherparams=iisid={Iis_Id}") Text="Mtc Flux Tax" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/COA" Text="Mtc Vessel Customer (COA)" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/Train%20Quality%20(DTRAIN~LTRAIN)" Text="Train Quality" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/Wood%20Shipments" Text="Wood Shipments" Target="_blank" /><br />
+                    <br />
+                    <h5>Minntac</h5>
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/Lab%20Tails" Text="Lab Tails" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/NOLA%20Audit%20Report" Text="NOLA Audit Report" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/Particle%20Size%20Indicator%20Audit%20Report" Text="PSI Audit Report" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/Pellet%20LTD%20-%20Reducibility" Text="Pellet LTD Reducibility" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/Pellet%20Physical%20and%20Metallurgical%20Qualities%20Report" Text="Pellet Physical/Metallurgical" Target="_blank" /><br />
+                    <br />
+                    <h5>Keetac</h5>
+                    <RadzenLink Path="http://mno-reports/Reports/report/Keetac/Lab/Keetac%20Chemistries" Text="Ktc Chemistries" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Keetac/Lab/Pellet%204%20Hr%20Report" Text="Ktc Lab 4 Hour" Target="_blank" /><br />
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/report/Keetac/Concentrator/KTC%20Met%20Report" Text="Ktc Met Report" Target="_blank" /><br />
+                    <br />
+                    <h5>Misc. Lab</h5>
+                    <RadzenLink Path="http://mno-reports.mno.uss.com/Reports/browse/Minntac/Lab" Text="Lab Reports List" Target="_blank" /><br />
+                    <RadzenLink Path="https://tabprod.psc.uss.com/#/views/LIMSOilSamplesByStatus/MainDashboard" Text="Oil Samples By Status" Target="_blank" /><br />
+                    <RadzenLink Path="https://www.mno.uss.com/apps/Lab/LIMS/LIMSResults/OilResults.aspx" Text="Oil Results" Target="_blank" /><br />
+
+                </ChildContent>
+            </RadzenPanel>
+        </div>
+
+        <div class="col-xl-4 col-lg-6 col-12">
+            <RadzenPanel AllowCollapse="true" Style="margin: 40px auto;" Collapsed="true">
+                <HeaderTemplate>
+                    <h4 class="m-0 d-flex align-items-center">
+                        Misc.
+                    </h4>
+                </HeaderTemplate>
+                <ChildContent>
+                    <RadzenLink Path="/MNOWeb/Mtc/OreMovement/Default.aspx" Text="Old Ore Movement Page" Target="_blank" /><br />
+                    <RadzenLink Path="https://mno-pi-web.mno.uss.com/PIVision/#/Displays/179/MCR---Limestone-Display" Text="Stone Train Dumping" Target="_blank" /><br />
+                    <RadzenLink Path="/MNOWeb/Mtc/Lab/TrainSchedule.aspx" Text="Train Schedule" Target="_blank" /><br />
+                    <RadzenLink Path="/bzr/OM_Lab/api/FileIndexXlsx" Text="Index Of Files" Target="_blank" /><br />
+                </ChildContent>
+            </RadzenPanel>
+        </div>
+
+    </div>
+
+</CascadingAuthenticationState>
+@code {
+
+    private string Iis_Id = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await base.OnInitializedAsync();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+            await GetFormSessionId();
+    }
+
+    /// <summary>
+    /// Gets the form session id from the database or creates one if needed
+    /// </summary>
+    /// <returns></returns>
+    /// <remarks>This dates back to old classic ASP code and Oracle forms.  The security on that was based solely on if
+    /// a record exists in the formsessionid table.  We will create/obtain this on init.
+    /// This is ONLY needed for Oracle Forms stuff and once that is completely replaced, this code can go away
+    /// </remarks>
+    private async Task GetFormSessionId()
+    {
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string usr = auth.User.Identity!.Name!;
+        var frmSession = await Task.Run(() => DAL.Services.FormsSessionIdSvc.ProcureSession(usr));
+
+        Iis_Id = frmSession.Session_Id;
+    }
+
+}

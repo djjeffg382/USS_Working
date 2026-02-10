@@ -1,0 +1,183 @@
+﻿@page "/lab_mtc_coarse_tails"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+
+@inject Radzen.DialogService DialogSvc
+@inject NotificationService NotificationSvc
+
+<PageTitle>@Util.PROGRAM_TITLE - Minntac Coarse Tails</PageTitle>
+<SectionContent SectionName="page-title">Minntac Coarse Tails</SectionContent>
+
+
+
+<RadzenCard class="m-3" style="width:1400px">
+    <div class="row mb-4">
+        <div class="col-2">
+            <h5>Date:</h5>
+            <RadzenDatePicker @bind-Value=@SelectedDate DateFormat="d" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <h5>Interval:</h5>
+            <RadzenNumeric Step="2" Min="0" Max="22" @bind-Value=@SelectedInterval TValue="short" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <RadzenButton Icon="add_circle_outline" Text="Add Record" Click="@InsertRowClick" Disabled=@(CtToInsert != null) />
+        </div>
+    </div>
+
+    <RadzenDataGrid @ref="RadGrid" AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@CTList"
+                    TItem="DAL.Models.Coarse_Tails_Analysis" style="width:800px;height:500px"
+                    EditMode="DataGridEditMode.Single" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow">
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Property="Sdate" Title="Shift Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Property="Intvl" Title="Interval" />
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Property="Sample_Date" Title="Sample_Date" FormatString="{0:MM/dd/yyyy HH:mm}" Width="200px" />
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Property="Line" Title="Line" SortOrder="SortOrder.Ascending">
+                <EditTemplate Context="Ct">
+                    <RadzenNumeric @bind-Value="Ct.Line" ReadOnly=@(CtToInsert == null) Min="3" Max="18" Step="1" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Property="Fe" Title="Fe" FormatString="{0:N2}">
+                <EditTemplate Context="Ct">
+                    <RadzenNumeric @bind-Value="Ct.Fe" Format="0.00" ShowUpDown="false" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+
+            <RadzenDataGridColumn TItem="DAL.Models.Coarse_Tails_Analysis" Width="200px">
+                <Template Context="Ct">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRowClick(Ct))" @onclick:stopPropagation="true" title="Edit">
+                    </RadzenButton>
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Class="m-1" Click="@(args => DeleteRowClick(Ct))" @onclick:stopPropagation="true" title="Delete">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="Ct">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRowClick(Ct))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEditClick(Ct))">
+                    </RadzenButton>
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Class="m-1" Click="@(args => DeleteRowClick(Ct))" title="Delete">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+
+@code {
+    RadzenDataGrid<DAL.Models.Coarse_Tails_Analysis>? RadGrid;
+    private DateTime SelectedDate = DateTime.Today;
+    private short SelectedInterval = 0;
+    DAL.Models.Coarse_Tails_Analysis? CtToInsert;
+
+    private List<DAL.Models.Coarse_Tails_Analysis> CTList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadData()
+    {
+        List<DAL.Models.Coarse_Tails_Analysis> CTListTmp = await Task.Run(() => DAL.Services.Coarse_Tails_AnalysisSvc.GetByDate(SelectedDate, SelectedDate));
+        CTList = CTListTmp.FindAll(x => x.Intvl == SelectedInterval).OrderBy(x => x.Line).ToList();
+    }
+
+
+
+
+    void OnUpdateRow(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+        if (Ct == CtToInsert)
+        {
+            CtToInsert = null;
+        }
+        DAL.Services.Coarse_Tails_AnalysisSvc.Update(Ct);
+    }
+    void OnCreateRow(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+        DAL.Services.Coarse_Tails_AnalysisSvc.Insert(Ct);
+    }
+
+
+    async Task SaveRowClick(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+        if (Ct == CtToInsert)
+        {
+            CtToInsert = null;
+            await Task.Run(() => DAL.Services.Coarse_Tails_AnalysisSvc.Insert(Ct));
+        }
+        else
+            await Task.Run(() => DAL.Services.Coarse_Tails_AnalysisSvc.Update(Ct));
+        await LoadData();
+    }
+
+    async Task DeleteRowClick(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+
+        bool? confirm = await DialogSvc.Confirm("Delete record?", "Delete", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm.GetValueOrDefault(false))
+        {
+            if (Ct == CtToInsert)
+            {
+                CtToInsert = null;
+            }
+            await Task.Run(() => DAL.Services.Coarse_Tails_AnalysisSvc.Delete(Ct));
+            await LoadData();
+        }
+
+    }
+
+
+    void CancelEditClick(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+        if (Ct == CtToInsert)
+        {
+            CtToInsert = null;
+        }
+
+        RadGrid!.CancelEditRow(Ct);
+
+    }
+    async Task InsertRowClick()
+    {
+        //loop through the data that is showing and find the lowest line number not inserted yet
+        short lineToInsert;
+        for (lineToInsert = 3; lineToInsert <= 18; lineToInsert++)
+        {
+            if (CTList.FirstOrDefault(x => x.Line == lineToInsert) == null)
+                break;  //found a line not inserted yet
+        }
+        if (lineToInsert > 18)  //we didn't find a line to insert
+        {
+            NotificationSvc.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Insert Error",
+                    Detail = "Cannot add a record, all lines currently have data for this interval.  Please edit the line instead",
+                    Duration = 8000
+                });
+            return;
+        }
+        CtToInsert = new()
+            {
+                Sdate = SelectedDate,
+                Intvl = SelectedInterval,
+                Line = lineToInsert
+            };
+        await RadGrid!.InsertRow(CtToInsert);
+    }
+    async Task EditRowClick(DAL.Models.Coarse_Tails_Analysis Ct)
+    {
+        await RadGrid!.EditRow(Ct);
+    }
+}

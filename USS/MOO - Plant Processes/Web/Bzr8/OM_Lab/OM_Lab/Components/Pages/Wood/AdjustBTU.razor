@@ -1,0 +1,86 @@
+﻿@page "/wood_adjust_btu"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Wood Shipments BTU</PageTitle>
+<SectionContent SectionName="page-title">Wood Shipments Adjust BTU</SectionContent>
+
+
+
+<RadzenCard class="m-3">
+    <div class="col-12">
+        <div class="row mb-2">
+            <h6>Start Date:</h6>
+            <RadzenDatePicker @bind-Value=@StartDate DateFormat="d" Style="width:150px" />
+        </div>
+        <div class="row mb-2">
+            <h6>End Date:</h6>
+            <RadzenDatePicker @bind-Value=@EndDate DateFormat="d" Style="width:150px" />
+        </div>
+        <div class="row mb-2">
+            <h6>BTU Value:</h6>
+             <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@NewBTUValue Placeholder="Enter a BTU Value" Style="width:150px" Format="0.00" />
+        </div>
+        
+        <div class="row mb-2">
+            <RadzenButton Text="Adjust BTU" Click="AdjustBTUButtonClickAsync" Style="width:150px" />
+        </div>
+    </div>
+
+
+</RadzenCard>
+
+
+
+@code {
+    private DateTime StartDate = DateTime.Today.AddDays(-7);
+    private DateTime EndDate = DateTime.Today;
+    private decimal? NewBTUValue;
+
+    private async Task AdjustBTUButtonClickAsync()
+    {
+        if (!NewBTUValue.HasValue)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Data",
+                    Detail = "Missing BTU Value",
+                    Duration = 4000
+                });
+            return;
+        }
+        else
+        {
+            if(StartDate > EndDate)
+            {
+                notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Data",
+                    Detail = "Start Date must not be greater than end date",
+                    Duration = 4000
+                });
+                return;
+            }
+            else
+            {
+                //data is good, run the update
+                int recsUpdated = await Task.Run(() => DAL.Services.Wood_Truck_ShipmentsSvc.AdjustBTU(StartDate, EndDate, NewBTUValue.Value));
+                notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "BTU Adjusted",
+                    Detail = $"{recsUpdated} records adjusted",
+                    Duration = 4000
+                });
+            }   
+        }
+    }
+}

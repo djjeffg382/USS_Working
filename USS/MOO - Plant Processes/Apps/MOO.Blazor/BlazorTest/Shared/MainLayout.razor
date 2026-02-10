@@ -1,0 +1,128 @@
+﻿@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Http
+@using Radzen.Blazor
+@inherits LayoutComponentBase
+@inject NavigationManager UriHelper
+@inject IJSRuntime JSRuntime
+@inject MOO.Blazor.ThemeState themeState //For enabling dark/default themes
+@inject IHttpContextAccessor httpContext //
+@inject NotificationService NotificationService //For sending notifications to UI
+@inject ContextMenuService contextMenuService
+
+
+<link href="_content/Radzen.Blazor/css/@(themeState.ThemeCSS)" rel="stylesheet" />
+
+
+<RadzenDialog />
+<RadzenNotification />
+<RadzenTooltip />
+<RadzenContextMenu />
+
+<RadzenHeader>
+    <ChildContent>
+        <div class="row justify-content-start align-items-center">
+            <div class="col-5 d-flex align-items-center">
+                <RadzenSidebarToggle Click="@(args => { sidebarExpanded = !sidebarExpanded; bodyExpanded = !bodyExpanded; })">
+                </RadzenSidebarToggle>
+                <RadzenLabel Text="APPLICATION TITLE">
+                </RadzenLabel>
+            </div>
+            <div class="col-7 d-flex align-items-center justify-content-end">
+                <RadzenImage Path="http://www.mno.uss.com/images/theme.png" title="Themes" Click=@(args => ShowThemeMenu(args)) />
+                @*<RadzenButton Icon="dark_mode" ButtonStyle="ButtonStyle.Light" Click="ThemeButtonClicked" />*@
+                <a href="http://www.mno.uss.com" title="Minntac Home Page" target="_blank" class="mx-3">
+                    <img src="http://www.mno.uss.com/images/USS_MNOre.jpg" />
+                </a>
+            </div>
+        </div>
+    </ChildContent>
+</RadzenHeader>
+
+
+<div style="width:100%">
+    <RadzenBody @ref="@body0" @bind-Expanded="@bodyExpanded">
+        <ChildContent>
+            <RadzenContentContainer Name="main">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 pt-4 pb-5 px-3 px-lg-5">
+                            @Body
+                        </div>
+                    </div>
+                </div>
+            </RadzenContentContainer>
+        </ChildContent>
+    </RadzenBody>
+</div>
+<RadzenSidebar @ref="@sidebar0" @bind-Expanded="@sidebarExpanded" class="rz-sidebar">
+    <ChildContent>
+        @*<div style="padding: 1rem">
+            <RadzenTextBox Placeholder="Find component ..." type="search" @oninput="@FilterPanelMenu" style="width: 100%" />
+            </div>*@
+        <NavMenu></NavMenu>
+    </ChildContent>
+</RadzenSidebar>
+
+@code {
+    RadzenSidebar? sidebar0;
+    RadzenBody? body0;
+    bool sidebarExpanded = true;
+    bool bodyExpanded = false;
+
+    void ShowThemeMenu(MouseEventArgs args)
+    {
+        contextMenuService.Open(args,
+            new List<ContextMenuItem> {
+                new ContextMenuItem(){ Text = "Default", Value = "default" },
+                new ContextMenuItem(){ Text = "Dark", Value = "dark" },
+                new ContextMenuItem(){ Text = "Software", Value = "software" },                
+                new ContextMenuItem(){ Text = "Humanistic", Value = "humanistic" },
+                new ContextMenuItem(){ Text = "Standard", Value = "standard"},
+         }, OnThemeMenuItemClick);
+    }
+    void OnThemeMenuItemClick(MenuItemEventArgs args)
+    {
+        themeState.SetTheme((string)args.Value);
+        UriHelper.NavigateTo(UriHelper.ToAbsoluteUri(UriHelper.Uri).ToString());
+        contextMenuService.Close();
+    }
+    private void ThemeButtonClicked()
+    {
+        NotificationMessage msg = new NotificationMessage()
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Theme",
+                Detail = "Succussfully Updated",
+                Duration = 2000
+            };
+        themeState.ToggleTheme();
+        NotificationService.Notify(msg);
+
+        UriHelper.NavigateTo(UriHelper.ToAbsoluteUri(UriHelper.Uri).ToString());
+    }
+
+    private string copyrightText = $"Copyright \u00a9{DateTime.Today.Year} United States Steel Corporation";
+
+
+
+    protected override void OnInitialized()
+    {
+        System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+    }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+
+    //}
+
+    void FilterPanelMenu(ChangeEventArgs args)
+    {
+        //var term = args.Value.ToString();
+    }
+
+    void ChangeTheme(object value)
+    {
+        //themeState.CurrentTheme = value.ToString();
+        //UriHelper.NavigateTo(UriHelper.ToAbsoluteUri(UriHelper.Uri).ToString());
+    }
+}

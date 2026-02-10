@@ -1,0 +1,172 @@
+﻿@page "/wood_shipment_list"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Wood Shipments</PageTitle>
+<SectionContent SectionName="page-title">Wood Shipments</SectionContent>
+
+
+
+<RadzenCard class="m-3">
+
+    <div class="row mb-2">
+        <div class="col">
+            <CascadingAuthenticationState>
+                <AuthorizeView Roles="Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR">
+                    <Authorized>
+                        <RadzenButton Click="AddBtnClickedAsync" Icon="add" ButtonStyle="ButtonStyle.Light" title="Add Wood Shipment" />
+                        <RadzenButton Click="EditBtnClickedAsync" Icon="edit" ButtonStyle="ButtonStyle.Light" title="Edit Wood Shipment" />
+                    </Authorized>
+                </AuthorizeView>
+            </CascadingAuthenticationState>
+            <RadzenButton Click="RefreshGrid" Icon="refresh" ButtonStyle="ButtonStyle.Light" title="Refresh Grid" />
+        </div>
+    </div>
+
+
+
+    <RadzenDataGrid @ref="RadGrid" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Simple" AllowSorting="true" IsLoading="GridLoading"
+                    Data="@WoodList" TItem="DAL.Models.Wood_Truck_Shipments" LogicalFilterOperator="LogicalFilterOperator.Or" LoadData="@LoadData"
+                    AllowPaging="true" PageSize="20" Count="RecCount" ShowPagingSummary="true" FilterDelay="3000" @bind-Value=@SelectedWood
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" PageSizeOptions="@PageSizeOptions" Style="height:600px"
+                    Settings="GridSettings">
+
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Invoice_Nbr" Title="Invoice Nbr" />
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Delivery_Date" Title="Delivery Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Inbound_Wt" Title="Inbound Weight" FormatString="{0:N0}" Filterable="false" />
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Outbound_Wt" Title="Outbound Weight" FormatString="{0:N0}" Filterable="false" />
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Avg_Perc_Moist" Title="Avg Moisture %" FormatString="{0:N2}" Filterable="false" />
+            <RadzenDataGridColumn TItem="DAL.Models.Wood_Truck_Shipments" Property="Btu_Lb" Title="BTU/Lb" FormatString="{0:N2}" Filterable="false" />
+
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+
+
+@code {
+
+    private bool GridLoading = false;
+    private int RecCount = 0;
+    private RadzenDataGrid<DAL.Models.Wood_Truck_Shipments>? RadGrid = null!;
+    private List<DAL.Models.Wood_Truck_Shipments> WoodList = new List<DAL.Models.Wood_Truck_Shipments>();
+    private IList<DAL.Models.Wood_Truck_Shipments> SelectedWood = new List<DAL.Models.Wood_Truck_Shipments>();
+    DataGridSettings? GridSettings;
+
+    IEnumerable<int> PageSizeOptions = new int[] { 20, 50, 100, 500 };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await RadGrid!.Reload();
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadData(LoadDataArgs args)
+    {
+        string filterInvoice = "";
+        DateTime? filterStartDate = null;
+        DateTime? filterEndDate = null;
+
+        foreach (var filter in args.Filters)
+        {
+            switch (filter.Property.ToUpper())
+            {
+                case "DELIVERY_DATE":
+                    switch (filter.FilterOperator)
+                    {
+                        case FilterOperator.Equals:
+                            filterStartDate = (DateTime)filter.FilterValue;
+                            filterEndDate = (DateTime)filter.FilterValue;
+                            break;
+                        case FilterOperator.LessThan:
+                            filterEndDate = ((DateTime)filter.FilterValue).AddSeconds(-1);
+                            break;
+                        case FilterOperator.LessThanOrEquals:
+                            filterEndDate = ((DateTime)filter.FilterValue);
+                            break;
+                        case FilterOperator.GreaterThan:
+                            filterStartDate = ((DateTime)filter.FilterValue).AddSeconds(1);
+                            break;
+                        case FilterOperator.GreaterThanOrEquals:
+                            filterStartDate = ((DateTime)filter.FilterValue);
+                            break;
+                    }
+                    break;
+                case "INVOICE_NBR":
+                    filterInvoice = (string)filter.FilterValue;
+                    break;
+            }
+
+        }
+        string ordBy = "", ordDirection = "";
+        if (args.Sorts.Count() > 0)
+        {
+            ordBy = args.Sorts.FirstOrDefault()!.Property;
+            ordDirection = args.Sorts.FirstOrDefault()!.SortOrder! == SortOrder.Descending ? "Desc" : "";
+        }
+
+        GridLoading = true;
+        MOO.DAL.PagedData<List<DAL.Models.Wood_Truck_Shipments>> pd =
+                    await Task.Run(() => DAL.Services.Wood_Truck_ShipmentsSvc.GetPagedData(
+                                args.Skip.GetValueOrDefault(0) + 1, args.Top.GetValueOrDefault(0),
+                            DeliveryDateStart: filterStartDate, DeliveryDateEnd: filterEndDate, InvoiceNbr: filterInvoice, orderBy: ordBy, orderDirection: ordDirection));
+
+        WoodList = pd.Data;
+        RecCount = pd.TotalRows;
+        GridLoading = false;
+    }
+
+    private async Task EditBtnClickedAsync()
+    {
+        if (SelectedWood.Count >= 1)
+        {
+            await dialogService.OpenAsync<Dialogs.AddEditWood>("Update Wood Shipment",
+                   new Dictionary<string, object>() { { "Wood", SelectedWood[0] }, { "IsInsert", false } },
+                   new DialogOptions() { Width = "400px", Height = "550px", Resizable = false, Draggable = true });
+
+            await RefreshGrid();
+        }
+
+    }
+
+
+    private async Task AddBtnClickedAsync()
+    {
+
+        DAL.Models.Wood_Truck_Shipments wts = new();
+
+        await dialogService.OpenAsync<Dialogs.AddEditWood>("Update Wood Shipment",
+               new Dictionary<string, object>() { { "Wood", wts }, { "IsInsert", true } },
+               new DialogOptions() { Width = "400px", Height = "550px", Resizable = false, Draggable = true });
+
+        await RefreshGrid();
+
+    }
+
+    private async Task RefreshGrid()
+    {
+        //store selected row to reselect after refresh
+        string selectedID = "";
+        if (SelectedWood.Count > 0)
+            selectedID = SelectedWood[0].Invoice_Nbr;
+        await RadGrid!.Reload();
+        if (!string.IsNullOrEmpty(selectedID))
+        {
+            var selected = WoodList.FirstOrDefault(x => x.Invoice_Nbr == selectedID);
+            if (selected != null)
+                await RadGrid!.SelectRow(selected);
+        }
+
+
+    }
+}

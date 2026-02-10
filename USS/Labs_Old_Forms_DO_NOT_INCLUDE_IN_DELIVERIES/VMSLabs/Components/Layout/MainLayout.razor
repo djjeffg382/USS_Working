@@ -1,0 +1,28 @@
+﻿@inherits MainLayoutBase
+<RadzenComponents @rendermode="InteractiveServer" />
+
+<RadzenLayout style="position: relative;">
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="VMS Labs" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar FullHeight="true" Responsive="false" @bind-Expanded="@sidebarExpanded" style="position: absolute; z-index: 3">
+        <RadzenStack AlignItems="AlignItems.End" class="rz-p-2">
+            <RadzenButton Icon="west" Variant="Variant.Text" ButtonStyle="ButtonStyle.Secondary" Click="@(() => sidebarExpanded = false)" />
+        </RadzenStack>
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+        </RadzenPanelMenu>        
+    </RadzenSidebar>
+    <RadzenBody>
+        <RadzenContentContainer Style="margin:20px">
+            @Body
+        </RadzenContentContainer>
+    </RadzenBody>
+    @if (sidebarExpanded)
+    {
+        <div @onclick="@(() => sidebarExpanded = false)" class="rz-dialog-mask" style="position: absolute; z-index: 2"></div>
+    }
+</RadzenLayout>

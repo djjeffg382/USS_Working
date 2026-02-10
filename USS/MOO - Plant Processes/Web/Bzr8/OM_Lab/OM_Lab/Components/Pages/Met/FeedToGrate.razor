@@ -1,0 +1,164 @@
+﻿@page "/met_feed_to_grate"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+@inject OM_Lab.Data.Models.MetChangeDateVals MetParams
+
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Met Feed To Grate</PageTitle>
+<SectionContent SectionName="page-title">Feed To Grate</SectionContent>
+<RadzenCard class="m-3">
+    <div class="row justify-content-start align-items-center">
+        <div class="col-3">
+            <h3>Select Date:</h3>
+            <RadzenDatePicker @bind-Value=@MetParams.MetDate DateRender=@DateRender DateFormat="d" Change="ChangeDate" Required="true" />
+        </div>
+        <div class="col-3">
+            <RadzenButton ButtonStyle="ButtonStyle.Secondary" style="width: 260px" Icon="save" BusyText="Calculating ..." IsBusy=@CalcFTGRunning Click=@CalculateFTGAsync Text="Calculate Feed To Grate" />
+        </div>
+
+        <div class="col-2 d-flex align-items-center justify-content-end">
+            <RadzenButton Click="SaveBtnClickAsync" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Save" title="Save Data" Width="50px"
+                          Disabled='@(!DataIsModified)' BusyText="Saving ..." IsBusy=@IsSaving />
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+<RadzenCard class="m-3">
+
+    <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="true" Data="@FTGList" @ref="RadGrid"
+                    TItem="DAL.Models.Met_Feed_To_Grate" style="width:1100px;height:300px">
+        <EmptyTemplate>
+            <p>No Feed To Grate records have been calculated for the specified date yet.  Make sure all month end numbers are entered before caclulating. </p>
+        </EmptyTemplate>
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Datex" Title="Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Step" Title="Step" />
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Material" Title="Material" />
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Conc_Tons" Title="Conc Tons">
+                <Template Context="data">
+                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Conc_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="F_T_G" Title="Feed To Grate">
+                <Template Context="data">
+                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.F_T_G Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Factor" Title="Factor">
+                <Template Context="data">
+                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Factor Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Train_H2o" Title="Train Moisture">
+                <Template Context="data">
+                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Train_H2o Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Feed_To_Grate" Property="Inventory" Title="Inventory">
+                <Template Context="data">
+                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Inventory Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+
+@code {
+    private RadzenDataGrid<DAL.Models.Met_Feed_To_Grate> RadGrid = new();
+    private List<DAL.Models.Met_Feed_To_Grate> FTGList = new();
+    private bool DataIsModified = false;
+    private bool CalcFTGRunning = false;
+    private bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadData()
+    {
+        FTGList = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.GetAll(MetParams.MetDate, MetParams.MetDate));
+        DataIsModified = false;
+    }
+    private async Task ChangeDate()
+    {
+        //whatever date user selects, override to last day of month
+        MetParams.MetDate = MOO.Dates.LastDayOfMonth(MetParams.MetDate);
+        await LoadData();
+    }
+    private void DateRender(DateRenderEventArgs args)
+    {
+        //disable dates later than today
+        args.Disabled = (args.Date > DateTime.Today.AddDays(-1));
+    }
+
+    private async Task SaveBtnClickAsync()
+    {
+        IsSaving = true;
+        foreach (var f in FTGList)
+        {
+            int recsUpdated = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Update(f));
+            if (recsUpdated == 0)
+            {
+                await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Insert(f));
+            }
+        }
+        IsSaving = false;
+        DataIsModified = false;
+    }
+
+
+    /// <summary>
+    /// runs the feed to grate procedure from met roll to get the data
+    /// </summary>
+    /// <returns></returns>
+    private async Task CalculateFTGAsync()
+    {
+        CalcFTGRunning = true;
+        //clear the feed to grate list, we will load this with the recalc
+        FTGList.Clear();
+        DAL.Models.Met_Feed_To_Grate ftgVal;
+        //need to determine which material was used for each step, we will need a record for each material for the specified month
+
+        //agg2
+        ftgVal = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Calculate(MetParams.MetDate, 2, DAL.Models.Met_Material.Flux));
+        if (ftgVal.Conc_Tons > 0)
+            FTGList.Add(ftgVal);
+
+        ftgVal = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Calculate(MetParams.MetDate, 2, DAL.Models.Met_Material.Acid));
+        if (ftgVal.Conc_Tons > 0)
+            FTGList.Add(ftgVal);
+
+
+        //agg3
+        ftgVal = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Calculate(MetParams.MetDate, 3, DAL.Models.Met_Material.Flux));
+        if (ftgVal.Conc_Tons > 0)
+            FTGList.Add(ftgVal);
+
+
+        ftgVal = await Task.Run(() => DAL.Services.Met_Feed_To_GrateSvc.Calculate(MetParams.MetDate, 3, DAL.Models.Met_Material.Acid));
+        if (ftgVal.Conc_Tons > 0)
+            FTGList.Add(ftgVal);
+
+
+        StateHasChanged();
+        await RadGrid.Reload();
+        CalcFTGRunning = false;
+        DataIsModified = true;
+
+    }
+
+
+}

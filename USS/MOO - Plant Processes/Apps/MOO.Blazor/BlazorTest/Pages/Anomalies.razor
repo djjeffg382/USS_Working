@@ -1,0 +1,17 @@
+﻿@page "/anomalies"
+@using MOO.Blazor.Components
+
+<h1>Anomalies Test Page</h1>
+<AnomaliesView Plant="MOO.Plant.Keetac" Location="Concentrator Plant" Style="width:300px" SensorColumnWidth="100px"/>
+
+@code{
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+    }
+    protected override void OnInitialized()
+    {
+        
+        base.OnInitialized();
+    }
+}

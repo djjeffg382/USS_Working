@@ -1,0 +1,371 @@
+﻿@*the following inject statement requires builder.Services.AddHttpClient() added to program.cs*@
+@inject System.Net.Http.HttpClient Client
+
+@using DAL = MOO.DAL.ToLive
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Net.Http.Json
+@using System.Security.Claims
+@using Newtonsoft.Json
+@using System.Text
+@using System.Threading.Tasks
+@using Polly
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<RadzenLabel Text=@CannotSubscribe Visible="@(!string.IsNullOrEmpty(CannotSubscribe))" style="color:red" />
+<div>
+    <div class="row mb-2">
+        <div class="col-1" style="font-size:large">
+            Show:
+        </div>
+        <div class="col-2">
+            <RadzenDropDown AllowClear="false" TValue="string" Data="TagList" @bind-Value="SelectedTag" Change="RefreshGrid" />
+        </div>
+    </div>
+
+
+
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="false" AllowSorting="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+    Data="@EsList" TItem="Models.Subscriptions" @ref="RadGrid" style=@GridStyle IsLoading="IsLoading">
+        <Columns>
+            <RadzenDataGridColumn TItem="Models.Subscriptions" Property="Name" Title="Subscription Name" Width="200px">
+                <Template Context="data">
+                    <div style="white-space:normal">
+                        @data.Name
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Models.Subscriptions" Property="Description" Title="Description">
+                <Template Context="data">
+                    <div style="white-space:normal">
+                        @data.Description
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Models.Subscriptions" Title="Subscribe" Sortable="false" Filterable="false" Visible="@(string.IsNullOrEmpty(CannotSubscribe))">
+                <Template Context="data">
+                    @if (data.SubscriptionType == DAL.Enums.Email_Subscription_Type.Manual_Subscribe)
+                    {
+                        <div style="white-space:normal">
+                            @data.Directions
+                        </div>
+                    }
+                    else
+                    {
+                        @if (data.IsSubscribed)
+                        {
+                            <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="unsubscribe" Class="m-1" Click="@(() => Unsubscribe(data))" Text="Unsubscribe" />
+
+                        }
+                        else
+                        {
+                            <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="mail" Class="m-1" Click="@(() => Subscribe(data))" Text="Subscribe" />
+                        }
+                    }
+
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+
+@code {
+    private string CannotSubscribe = "";
+
+    /// <summary>
+    /// The tag used to filter the email subscription list
+    /// </summary>
+    [Parameter]
+    public string Tag { get; set; } = "";
+
+    [Parameter]
+    public string Height { get; set; } = "";
+
+    private string GridStyle
+    {
+        get
+        {
+            return !string.IsNullOrEmpty(Height) ? $"height:{Height}" : "";
+        }
+    }
+
+    private string SelectedTag = "ALL";
+    private bool IsLoading = false;
+
+    private string[] TagList = new string[] { "ALL", "MTC_MINE", "MTC_CRUSH", "MTC_CONC", "MTC_AGG", "MTC_LAB", "KTC_MINE", "KTC_CRUSH", "KTC_PLANT" };
+
+    List<Models.Subscriptions> EsList = new();
+    List<DAL.Models.Email_Subscription> SubscribedList = new();
+    private RadzenDataGrid<Models.Subscriptions> RadGrid = null!;
+    private string Username = "";
+
+    private const string BASE_URL = "http://www.mno.uss.com/API/MOO_API_Fx/api/PiNotification/";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            IsLoading = true;
+            StateHasChanged();
+            if (TagList.Contains(Tag))
+            {
+                SelectedTag = Tag;
+            }
+            if (Client == null)
+                throw new Exception("Must add builder.Services.AddHttpClient() to program.cs file");
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Username = user.Identity.Name!;
+                bool invalidEmail = false;
+                //check that this user has an email address, if not we will not allow them to subscribe
+                MOO.AD.AdUser adu = MOO.AD.AdUserProvider.GetAdUser(user.Identity.Name);
+                if (adu != null)
+                    invalidEmail = string.IsNullOrEmpty(adu.EmailAddress);
+                else
+                    invalidEmail = true;
+
+                if (invalidEmail)
+                    CannotSubscribe = $"Unable to subscribe, user account ({user.Identity.Name}) does not have a valid email associated with it.";
+
+            }
+            else
+                CannotSubscribe = "Unable to subscribe, user account not authenticated";
+
+
+            await RefreshGrid();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+
+    /// <summary>
+    /// returns if the email subscription is in the SubscribedList
+    /// </summary>
+    /// <param name="Es"></param>
+    /// <returns></returns>
+    protected bool IsSubscribed(DAL.Models.Email_Subscription Es)
+    {
+        bool result = SubscribedList.Any<DAL.Models.Email_Subscription>(s => s.Email_Subscription_Id == Es.Email_Subscription_Id);
+        return result;
+    }
+
+    private async Task RefreshGrid()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        string searchTag = SelectedTag;
+        //If user selected ALL then use an empty searchtag
+        if (SelectedTag == "ALL")
+            searchTag = string.Empty;
+
+        EsList = new();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            SubscribedList = DAL.Services.Email_SubscriptionSvc.GetByUsername(user.Identity.Name);
+
+            await AddPiNotificationsToESList(searchTag);
+        }
+
+        List<DAL.Models.Email_Subscription> subscripList = await Task.Run(() => DAL.Services.Email_SubscriptionSvc.GetAll(searchTag));
+        foreach (var subscrip in subscripList)
+        {
+            //We won't add PI Group, this will come in from the PI Notifications REST API as we need the PI GUID to subscribe to that
+            if (subscrip.Subscription_Type != DAL.Enums.Email_Subscription_Type.PI_Group)
+                EsList.Add(new Models.Subscriptions()
+                    {
+                        Name = subscrip.Subscription_Name,
+                        Description = subscrip.Description,
+                        Directions = subscrip.Directions,
+                        SubscriptionType = subscrip.Subscription_Type,
+                        IsSubscribed = SubscribedList.Any<DAL.Models.Email_Subscription>(s => s.Email_Subscription_Id == subscrip.Email_Subscription_Id),
+                        Email_Subscription = subscrip
+                    });
+        }
+        IsLoading = false;
+        StateHasChanged();
+        if (RadGrid != null)
+            await RadGrid.Reload();
+
+    }
+
+    private async Task AddPiNotificationsToESList(string SearchTag)
+    {
+        try
+        {
+            List<Models.PiNotification>? NotificationList = null;
+            string usr = ConvertUsernameForPISubscription(Username);
+            string url = $"{BASE_URL}{usr}/{SearchTag}";
+            //use Polly for retrying the REST Call
+            //was getting occasional errors on this so attempting retry
+            var retryPolicy = Polly.Policy
+                    .Handle<Exception>() // Handle any exception
+                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(retryAttempt)); // Retry 3 times with increasing delay
+
+            await retryPolicy.ExecuteAsync(async () =>
+            {
+                NotificationList = await Client!.GetFromJsonAsync<List<Models.PiNotification>>(url);
+            });
+
+            if (NotificationList != null)
+            {
+                foreach (var notify in NotificationList)
+                {
+                    EsList.Add(new Models.Subscriptions()
+                        {
+                            Name = notify.Name,
+                            Description = notify.Description,
+                            SubscriptionType = DAL.Enums.Email_Subscription_Type.PI_Notification,
+                            IsSubscribed = notify.IsSubscribed,
+                            PiNotify = notify
+                        });
+                }
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            //do nothing.  this is typically caused by a timeout don't need to record this
+        }
+        catch (Exception ex)
+        {
+            MOO.Exceptions.ErrorLog.LogError("MOO.Blazor.EmailSubscription AddPiNotifcaionsToEsList", ex);
+        }
+    }
+
+    /// <summary>
+    /// Subscribes the current user to the specified EmailSubscription
+    /// </summary>
+    /// <param name="Es"></param>
+    /// <returns></returns>
+    private async Task Subscribe(Models.Subscriptions Es)
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            string usrPi = ConvertUsernameForPISubscription(Username);
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                if (Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.Auto_Email_Group)
+                {
+                    //add user to the TOLIVE.EMAIL_SUBSCRIPTION TABLE
+                    await AddUserToEmailSubscription(Es, user);
+
+                }
+                else if (Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.PI_Group)
+                {
+                    string url = $"{BASE_URL}{usrPi}";
+                    //PI Notification object doesn't exist with this yet as we did not pull this from PI
+                    Models.PiNotification notify = new()
+                    {
+
+                    };
+                    await Client.PutAsJsonAsync<Models.PiNotification>(url, Es.PiNotify!);
+                }
+                else if (Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.PI_Group || Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.PI_Notification)
+                {
+                    string url = $"{BASE_URL}{usrPi}";
+                    //PI AF Email groups
+                    await Client.PutAsJsonAsync<Models.PiNotification>(url, Es.PiNotify!);
+                }
+
+            }
+        }
+        catch (Exception ex)
+        {
+            MOO.Exceptions.ErrorLog.LogError("MOO.Blazor.EmailSubscription Subscribe", ex.Message, ex.StackTrace,
+                            $"Error subscribing to Email Subscription {Es.Name}. User={Username}", Exceptions.ErrorLog.ErrorLogType.Crash);
+        }
+
+        await RefreshGrid();
+    }
+
+    private async Task Unsubscribe(Models.Subscriptions Es)
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            string usrPi = ConvertUsernameForPISubscription(Username);
+            if (user.Identity != null && user.Identity.Name != null && user.Identity.IsAuthenticated)
+            {
+                if (Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.Auto_Email_Group)
+                {
+                    //remove user to the TOLIVE.EMAIL_SUBSCRIPTION TABLE
+                    DAL.Models.Email_Subscription_User esu = DAL.Services.Email_Subscription_UserSvc.GetByUsername(Es.Email_Subscription.Email_Subscription_Id, user.Identity.Name.ToLower());
+                    if (esu != null)
+                        await Task.Run(() => DAL.Services.Email_Subscription_UserSvc.Delete(esu));
+
+                }
+                else if (Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.PI_Group || Es.SubscriptionType == DAL.Enums.Email_Subscription_Type.PI_Notification)
+                {
+                    string url = $"{BASE_URL}{usrPi}";
+                    //PI AF Email groups and notifications
+                    var request = new HttpRequestMessage
+                        {
+                            Method = HttpMethod.Delete,
+                            RequestUri = new Uri(url),
+                            Content = new StringContent(JsonConvert.SerializeObject(Es.PiNotify), Encoding.UTF8, "application/json")
+                        };
+                    var response = await Client.SendAsync(request);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MOO.Exceptions.ErrorLog.LogError("MOO.Blazor.EmailSubscription Unsubscribe", ex.Message, ex.StackTrace,
+                            $"Error unsubscribing to Email Subscription {Es.Name}. User={Username}", Exceptions.ErrorLog.ErrorLogType.Crash);
+        }
+
+        await RefreshGrid();
+    }
+
+
+
+
+
+    private async Task AddUserToEmailSubscription(Models.Subscriptions Es, ClaimsPrincipal Usr)
+    {
+        //this user MUST be in the sec_users table also
+        DAL.Models.Sec_Users su = await Task.Run(() => DAL.Services.Sec_UserSvc.Get(Usr.Identity!.Name));
+        if (su == null)
+        {
+
+            //add the sec user now.
+            MOO.AD.AdUser u = MOO.AD.AdUserProvider.GetAdUser(Usr.Identity!.Name);
+            su = new()
+                {
+                    Username = u.SamAccountName,
+                    Domain = u.Domain,
+                    Active = true,
+                    Created_By = "IT Admin",
+                    Email = u.EmailAddress,
+                    Last_Name = u.Surname,
+                    First_Name = u.GivenName
+
+                };
+            await Task.Run(() => DAL.Services.Sec_UserSvc.Insert(su));
+        }
+
+        DAL.Models.Email_Subscription_User esu = new()
+            {
+                Username = Usr.Identity!.Name,
+                Email_Subscription_Id = Es.Email_Subscription.Email_Subscription_Id!
+            };
+        DAL.Services.Email_Subscription_UserSvc.Insert(esu);
+    }
+
+    private static string ConvertUsernameForPISubscription(string Username)
+    {
+        //because URL won't allow us to have a "\" between domain and user name we will do username@domain
+        string returnVal = Username;
+        if (Username.Contains("\\"))
+            returnVal = Username.Substring(Username.IndexOf("\\") + 1) + "@" + Username.Substring(0, Username.IndexOf("\\"));
+        return returnVal;
+    }
+}

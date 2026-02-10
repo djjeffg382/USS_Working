@@ -1,0 +1,51 @@
+﻿@using System.Text
+@inject DialogService DialogService
+
+
+
+@code {
+    /// <summary>
+    /// Pass message as string builder will be converted to HTML using markup
+    /// </summary>
+    [Parameter]
+    public StringBuilder MainMsg { get; set; } = new();
+
+    /// <summary>
+    /// Set Severity - Info, Warning, Error, etc..
+    /// </summary>
+    [Parameter]
+    public string MsgType { get; set; } = "";
+
+    /// <summary>
+    /// Set to link to request form. Dialog is defaulted to internal system requests MOO-Access Requests
+    /// </summary>
+    [Parameter]
+    public string RequestLink { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (RequestLink == "")
+            RequestLink = "http://www.mno.uss.com/Apps/RequestApp/CreateRequest.aspx";
+
+        await ShowCloseableFromOverlayDialog();
+
+    }
+
+
+    async Task ShowCloseableFromOverlayDialog()
+    {
+        MarkupString mus = new MarkupString(MainMsg.ToString());
+
+        await DialogService.OpenAsync(@MsgType, ds =>
+    @<div>
+        @mus
+        <div class="alert alert-secondary mt-4">
+            <span class="oi oi-pencil me-2" aria-hidden="true"></span>
+            <span class="text-nowrap">
+                Create a request
+                <a target="_blank" class="font-weight-bold link-dark" href="http://www.mno.uss.com/Apps/RequestApp/CreateRequest.aspx">here.</a>
+            </span>
+        </div>
+    </div>, new DialogOptions() { CloseDialogOnOverlayClick = false, ShowClose = false });
+    }
+}

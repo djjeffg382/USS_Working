@@ -1,0 +1,107 @@
+﻿@using System.Text
+@using DAL = MOO.DAL.ToLive;
+@using MOO.Blazor.Models
+@using MOO.Enums.Extension
+@((MarkupString)AnomHtml)
+<table class="MooAnomolies">
+    <thead>
+        <tr>
+            <th>
+                Line
+            </th>
+            @foreach (DateTime dt in DatesToShowInDetailTable)
+            {
+                DateTime columnDate = dt;
+                <th style="text-align:center;width:60px">
+                    @dt.ToString("MM/dd")
+                    <br />
+                    @dt.ToString("HH:mm")
+                </th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var anomLine in LineNumbers)
+        {
+            int lineNbr = anomLine;
+            <tr>
+                <td style="width:80px">
+                    @if (lineNbr > 0)
+                    {
+                        <span>@lineNbr</span>
+                    }
+                </td>
+                @foreach (DateTime dt in DatesToShowInDetailTable)
+                {
+                    DateTime columnDate = dt;
+                    var sensorLineData = AnomData.FirstOrDefault(x => x.Tag_Time == dt && x.Line == lineNbr);
+                    <td>
+                        @if (sensorLineData != null)
+                        {
+                            <div class='@(sensorLineData.Flag.ToString())'
+                                 title='@(GetTDTitle(sensorLineData.Flag))'>
+                                &nbsp
+                            </div>
+                        }
+                        else
+                        {
+                            <div>
+                            </div>
+                        }
+                    </td>
+
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public List<DAL.Models.Anomalies> AnomData { get; set; } = [];
+    /// <summary>
+    /// HTML Markup to show for the SensorName
+    /// </summary>
+    [Parameter] public string AnomHtml { get; set; } = "";
+
+
+    private DateTime[] DatesToShowInDetailTable = new DateTime[0];
+
+    private short[] LineNumbers = [];
+
+    protected override void OnInitialized()
+    {
+        FillAnomLineDateList();
+        base.OnInitialized();
+    }
+    private string GetTDTitle(DAL.Enums.AnomalyFlag AnomFlag)
+    {
+        string display = AnomFlag.GetDisplay().Name??"";
+        string description = AnomFlag.GetDescription();
+        if (string.IsNullOrEmpty(display))
+            return AnomFlag.ToString();
+        else if (display != description && !string.IsNullOrEmpty(description))
+            return $"{display}/{description}";
+        else
+            return display;
+
+    }
+
+    void FillAnomLineDateList()
+    {
+        if (AnomData.Count >0)
+        {
+
+            //need to get the last 24 hours.  In case we have some sensors that don't have the same last 24 hour
+            //we will group by time and then just get the latest
+            //This will be set to the static variable of the class
+            DatesToShowInDetailTable = (from anom in AnomData
+                                        group anom by anom.Tag_Time into g
+                                        select
+                                           g.First().Tag_Time
+                         ).OrderBy(x => x).Take(24).ToArray();
+
+            LineNumbers = AnomData.Select(x => x.Line).Distinct().OrderBy(x=>x).ToArray();
+
+        }
+    }
+}

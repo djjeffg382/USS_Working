@@ -1,0 +1,92 @@
+﻿@page "/lims_partcountconvert"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin")]
+
+
+<PageTitle>@Util.PROGRAM_TITLE - Particle Count Converter</PageTitle>
+<SectionContent SectionName="page-title">LIMS Particle Counter Converter</SectionContent>
+
+<RadzenCard>
+    <p>
+        This is the particle count converter form.  The particle counter has a limited number of characters we can use for the sample number.  The lab wanted to make sure to show the equipment number and sample point which reduces
+        the number of characters even more.   Because of this I created a converter to take the sample number and convert it into a 3 character code.  The export on the particle counter will have the first 3 characters in the sample
+        id as this code.
+    </p>
+    <p>
+        <strong>NOTE:</strong> In 2024, the lab moved the particle counter test to the ICP.  This conversion is no longer needed for the ICP machine as that can handle longer ID's.
+        This page will be left here in case they are need to use the old Particle Counter system.
+    </p>
+    <p class="mt-4 mb-4">This form can be used as a troubleshooting form to convert the code back and forth between the two.</p>
+
+    <h1>
+        Convert from Sample number to code:
+    </h1>
+    <div class="row mb-4">
+        <div class="col-2">
+            Sample Number:
+        </div>
+        <div class="col-2">
+            <RadzenNumeric TValue="int?" @bind-Value="SampleNbrToConvert" />
+        </div>
+        <div class="col-2">
+            <RadzenButton Click="ConvertSampleToCode" Text="Convert" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+        <div class="col-2">
+            <h3>@SampleNbrConverted</h3>
+        </div>
+    </div>
+
+
+
+    <h1>
+        Convert from Sample code to Sample Number:
+    </h1>
+    <div class="row mb-2">
+        <div class="col-2">
+            Sample Code:
+        </div>
+        <div class="col-2">
+            <RadzenTextBox @bind-Value="SampleStringToConvert"></RadzenTextBox>
+        </div>
+        <div class="col-2">
+            <RadzenButton Click="ConvertCodeToSample" Text="Convert" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+        <div class="col-2">
+            <h3>@SampleStringConverted</h3>
+        </div>
+    </div>
+    <div style="font-style:italic">
+        Note: Converting back to the sample number does a mod 200,000 on the value as 3 characters cannot store enough values. 
+        Therefore as part of the conversion we check the last 6 months for sample number mod 200,000 that matches the code.
+        If converting does not return anything, then it did not find a sample in the last 6 months with this number.
+    </div>
+</RadzenCard>
+
+@code {
+    private int? SampleNbrToConvert;
+    private string SampleNbrConverted = "";
+
+
+    private string SampleStringToConvert = "";
+    private string SampleStringConverted = "";
+
+
+    private void ConvertSampleToCode()
+    {
+        if (SampleNbrToConvert.HasValue)
+            SampleNbrConverted = Data.LIMSExports.PartCount.IntegerToPartCountCode(SampleNbrToConvert.Value);
+        else
+            SampleNbrConverted = "Unable to convert";
+    }
+
+    private void ConvertCodeToSample()
+    {
+        if (!string.IsNullOrEmpty(SampleStringToConvert))
+            SampleStringConverted = Data.LIMSExports.PartCount.PartCountCodeToInteger(SampleStringToConvert).ToString();
+        else
+            SampleStringConverted = "Unable to convert";
+    }
+}

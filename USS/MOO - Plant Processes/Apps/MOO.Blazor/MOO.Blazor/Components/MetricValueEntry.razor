@@ -1,0 +1,165 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.Core
+@using Microsoft.AspNetCore.Components.Authorization
+
+
+<RadzenCard Style="height:70vh">
+
+    <div class="mb-2">
+        <h4>Metric: </h4>
+        <RadzenDropDown AllowClear="false" TValue="DAL.Models.Metric" Data="MetricList" @bind-Value="SelectedMetric" Change="MetricChangeAsync" TextProperty="FullNameWithPath" style="width:600px"
+                        AllowFiltering="true" FilterOperator="StringFilterOperator.Contains" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+        @SelectedMetric?.Uom.Uom_Name
+    </div>
+    
+    <div class="row mb-2">
+        <h4>Insert Value</h4>
+        <div class="col-4">
+            <RadzenDatePicker @bind-Value="AddDateVal" ShowTime="true"></RadzenDatePicker>
+
+            <RadzenNumeric @bind-Value="AddVal" ShowUpDown="false"></RadzenNumeric>
+
+            <RadzenButton Click="AddBtnClickedAsync" Icon="add" ButtonStyle="ButtonStyle.Primary" title="Insert Value" Visible=@(DateTime.Today.Subtract(AddDateVal).TotalDays < DaysBackAllow) />
+        </div>
+        <div class="col-6">
+            <RadzenLabel Visible=@(DateTime.Today.Subtract(AddDateVal).TotalDays >= DaysBackAllow)
+                         Text='@($"Changes more than {DaysBackAllow} days back may require a report reload.  Contact IT_PP_Systems_MNOre@uss.com if need to enter data further back")' Style="color:red"></RadzenLabel>
+        </div>
+    </div>
+    <RadzenDataGrid AllowColumnResize="false" AllowSorting="true"
+                    Data="@MetricValList" TItem="DAL.Models.Metric_Value" style="height:78%;width:400px">
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Start_Date" Title="Date" />
+            <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Value" Title="Value" />
+
+            <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Width="50px">
+                <Template>
+                    <RadzenButton Click="@(async () => await DeleteBtnClickedAsync(context))" Icon="delete" ButtonStyle="ButtonStyle.Light" title="Delete Value"
+                                  Visible=@(DateTime.Today.Subtract(context.Shift_Date.GetValueOrDefault(DateTime.Today)).TotalDays < DaysBackAllow) />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+@code {
+
+
+    /// <summary>
+    /// Array of Metric IDs to show,  If null then we will show every metric the user has access to
+    /// </summary>
+    [Parameter]
+    public int[]? MetricIds { get; set; } = new int[0];
+
+
+
+
+    private List<DAL.Models.Metric> MetricList = new();
+    private DAL.Models.Metric? SelectedMetric;
+    private List<DAL.Models.Metric_Value> MetricValList = new();
+
+    private DateTime AddDateVal = DateTime.Today;
+    private decimal? AddVal;
+
+    private DateTime MetricDate = DateTime.Today;
+
+
+    private int DaysBackAllow = 10;   //number of days back to allow for metric value edit
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        DaysBackAllow = int.Parse(MOO.Data.ReadDBKey("METRIC_VALUE_ADJ_DAYS_BACK", "10"));
+        //only grab metrics that are active, have roles or users assigned and collection type 5
+        List<DAL.Models.Metric>? fullList = await Task.Run(() => DAL.Services.MetricSvc.GetAll()
+                                                    .FindAll(x => x.Coll_Type.Coll_Type_Id == 5 && x.Isactive && (!string.IsNullOrEmpty(x.UserListCSV) || !string.IsNullOrEmpty(x.RoleListCSV)))
+                                                    .OrderBy(x => x.FullNameWithPath).ToList());
+
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var usr = await Task.Run(() => MOO.DAL.ToLive.Services.Sec_UserSvc.Get(authState.User!.Identity!.Name));
+        if (usr != null)
+        {
+            MetricList = [];
+            var roles = await Task.Run(() => MOO.DAL.ToLive.Services.Sec_RoleSvc.GetRolesByUser(usr));
+            //add only items user has access to
+            //I chose to pull the roles into a list and then do a comparison rather than do a User.IsInRole call as that seemed to run slower
+            foreach (var m in fullList)
+            {
+                //Metric ids gives a list of what we want to show, if this is null or empty then we will show all
+                if (MetricIds == null || MetricIds.Count() == 0 || MetricIds.Contains(m.Metric_Id))
+                {
+                    if (roles.FirstOrDefault(x => string.Equals("Admin", x.Role_Name, StringComparison.InvariantCultureIgnoreCase)) != null)
+                        MetricList.Add(m);
+                    else
+                    {
+                        foreach (var r in m.RoleList)
+                            if (roles.FirstOrDefault(x => string.Equals(r, x.Role_Name, StringComparison.InvariantCultureIgnoreCase)) != null)
+                                MetricList.Add(m);
+
+                        foreach (var u in m.UserList)
+                            if (string.Equals(u, authState.User.Identity!.Name, StringComparison.InvariantCultureIgnoreCase))
+                                MetricList.Add(m);
+                    }
+                }
+
+            }
+        }
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task MetricChangeAsync()
+    {
+        await GetMetricValueDataAsync();
+
+    }
+
+
+
+    private async Task GetMetricValueDataAsync()
+    {
+        if (SelectedMetric != null)
+        {
+            DateTime startDate, endDate;
+
+            startDate = DateTime.MinValue;
+            endDate = DateTime.MaxValue;
+            MetricValList = await Task.Run(() => DAL.Services.Metric_ValueSvc.GetByDateRange(SelectedMetric.Metric_Id, startDate, endDate).OrderByDescending(x => x.Start_Date).ToList());
+        }
+    }
+    private async Task AddBtnClickedAsync()
+    {
+        if (!AddVal.HasValue)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = "You must enter a value",
+                    Duration = 4000
+                });
+            return;
+        }
+        if (SelectedMetric != null)
+        {
+            var newMv = new DAL.Models.Metric_Value(SelectedMetric.Process_Level.Site, Area.Agglomerator, AddDateVal, true, SelectedMetric.Metric_Id, AddVal.Value);
+            await Task.Run(() => DAL.Services.Metric_ValueSvc.Insert(newMv));
+            await GetMetricValueDataAsync();
+        }
+    }
+    private async Task DeleteBtnClickedAsync(DAL.Models.Metric_Value Mv)
+    {
+
+        bool? result = await dialogService.Confirm("Are you sure?", $"Delete value for  {Mv.Start_Date:MM/dd/yyyy HH:mm:ss}",
+                                new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (result.GetValueOrDefault(false))
+            await Task.Run(() => DAL.Services.Metric_ValueSvc.Delete(Mv));
+        await GetMetricValueDataAsync();
+
+    }
+}

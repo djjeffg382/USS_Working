@@ -1,0 +1,168 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.ToLive
+@inject OM_Lab.Data.Models.MetChangeDateVals MetParams
+
+<div class="row">
+    <div class="col-6">
+        <div class="row">
+            <div class="col-12">
+                <h6>Date:</h6>
+                <RadzenDatePicker @bind-Value=@SelectedDate DateRender=@DateRender DateFormat="d" Required="true" Change="CheckMonthEnd" />
+            </div>
+        </div>
+        <div class="row" style='@(ShowMaterialOption ? "":"display:none")'>
+            <div class="col-12">
+                <h6>Material:</h6>
+                <RadzenDropDown AllowClear="false" TValue="DAL.Models.Met_Material" @bind-Value="SelectedMaterial" Class="w-100"
+                                Data="@(Enum.GetValues(typeof(DAL.Models.Met_Material)))" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <h6>Is Month End:</h6>
+                <RadzenCheckBox @bind-Value=@IsMonthEnd Name="chkMonthEnd" TValue="bool" Change="CheckMonthEnd" />
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6">
+        @if (IsMonthEnd)
+        {
+            <h5>Month End Records Completed</h5>
+
+            foreach (var metMonth in MetMonthList)
+            {
+                <div class="row">
+                    <div class="col-6">
+                        @metMonth.TableName
+                    </div>
+                    <div class="col-6">
+                        @if (metMonth.IsComplete)
+                        {
+                            <span style="color:green">Yes</span>
+                        }
+                        else
+                        {
+                            <span style="color:darkred">No</span>
+                        }
+                    </div>
+
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<div class="col-md-12 text-right mt-4">
+    <RadzenButton Icon="done" Text="Ok" Click="OkBtnClick" />
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => dialogService.Close(false))" />
+</div>
+
+@code {
+    /*
+    * This dialog will be used for the Met Entry forms for changing the date
+   */
+
+    public const string DEFAULT_WIDTH = "550px";
+    public const string DEFAULT_HEIGHT = "375px";
+
+    public DateTime SelectedDate;
+    public bool IsMonthEnd;
+    public DAL.Models.Met_Material SelectedMaterial;
+    private record MetMonthEnd(string TableName, bool IsComplete);
+    private List<MetMonthEnd> MetMonthList = [];
+
+    [Parameter] public bool ShowMaterialOption { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        SelectedDate = MetParams.MetDate;
+        IsMonthEnd = MetParams.IsMonthEnd;
+        SelectedMaterial = MetParams.Material;
+        base.OnInitialized();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CheckMonthEnd();
+        await base.OnParametersSetAsync();
+    }
+
+    private async Task CheckMonthEnd()
+    {
+        MetMonthList.Clear();
+        if (IsMonthEnd)
+        {
+            await CheckMetMonth("tolive.met_crush_plant", "Crusher");
+            await CheckMetMonth("tolive.met_conc_plant2", "Conc Step 2");
+            await CheckMetMonth("tolive.met_conc_plant3", "Conc Step 3");
+            await CheckMetMonth("tolive.met_agg_plant2", "Agg Step 2");
+            await CheckMetMonth("tolive.met_agg_plant3", "Agg Step 3");
+        }
+
+    }
+
+    /// <summary>
+    /// Checks for a dmy record on the month end and adds to the MetMonthList
+    /// </summary>
+    /// <param name="MetTableName"></param>
+    /// <returns></returns>
+    private async Task CheckMetMonth(string MetTableName, string Label)
+    {
+        string sql = $"SELECT count(*) FROM {MetTableName} WHERE datex = {MOO.Dates.OraDate(SelectedDate)} AND dmy = 2";
+        var cnt = await Task.Run(() => MOO.Data.ExecuteScalar(sql, MOO.Data.MNODatabase.DMART, 0));
+        var count = (decimal)cnt;
+        MetMonthList.Add(new MetMonthEnd(Label, count > 0));
+
+    }
+
+
+    private void OkBtnClick()
+    {
+        if (ValidateSelection())
+        {
+            MetParams.MetDate = SelectedDate;
+            MetParams.Material = SelectedMaterial;
+            MetParams.IsMonthEnd = IsMonthEnd;
+            dialogService.Close(true);
+        }
+    }
+
+    private void DateRender(DateRenderEventArgs args)
+    {
+        //disable dates later than today
+        args.Disabled = (args.Date > DateTime.Today.AddDays(-1));
+    }
+
+    private bool ValidateSelection()
+    {
+        if (SelectedDate > DateTime.Today.AddDays(-1))
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Date Selected",
+                    Detail = "You cannot select a future date",
+                    Duration = 4000
+                });
+            return false;
+        }
+        if (IsMonthEnd && SelectedDate != MOO.Dates.LastDayOfMonth(SelectedDate))
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Date Selected",
+                    Detail = "Month end selection can only be selected for last day of month",
+                    Duration = 4000
+                });
+            return false;
+        }
+
+
+        return true;
+    }
+
+}

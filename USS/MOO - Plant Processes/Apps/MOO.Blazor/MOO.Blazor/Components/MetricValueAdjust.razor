@@ -1,0 +1,240 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.Core
+@using Microsoft.AspNetCore.Components.Authorization
+
+<style type="text/css">
+    .Shift1 {
+        background-color: #A3EA9D
+    }
+
+    .Shift2 {
+        background-color: #EDED9E
+    }
+
+    .Shift3 {
+        background-color: #A0BEEF
+    }
+
+        .Shift1 input, .Shift2 input, .Shift3 input {
+            color: black !important;
+        }
+</style>
+
+
+
+<RadzenCard Style="height:70vh">
+    @*Used for updating data*@
+    <div class="row" style="height:90%">
+        <div class="col-6" >
+            <div class="mb-2">
+                <h4>Metric: </h4>
+                <RadzenDropDown AllowClear="false" TValue="DAL.Models.Metric" Data="MetricList" @bind-Value="SelectedMetric" Change="MetricChangeAsync" TextProperty="FullNameWithPath" style="width:600px"
+                                AllowFiltering="true" FilterOperator="StringFilterOperator.Contains" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+                @SelectedMetric?.Uom.Uom_Name
+            </div>
+            <RadzenLabel Visible=@(!AllowMetricValueEdit) Text='@($"Edits only allowed for previous {DaysBackAllow} days.  Contact IT_PP_Systems_MNOre@uss.com if need to adjust further back")' Style="color:red"></RadzenLabel>
+            <RadzenDataGrid AllowColumnResize="false" AllowSorting="true"
+                            Data="@MetricValList" TItem="DAL.Models.Metric_Value" style="height:95%;width:600px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Start_Date" Title="Date" Width="200px" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Shift" Title="Shift" Width="100px" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Hour" Title="Hour" Width="100px" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Metric_Value" Property="Value" Title="Value">
+                        <Template>
+                            <RadzenNumeric TValue="decimal?" @bind-Value="context.Value" ShowUpDown="false" class='@($"Shift{context.Shift}")' Change="@(args => CalcShiftTotals())" ReadOnly=@(!AllowMetricValueEdit)></RadzenNumeric>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+
+        <div class="col-6">
+            <h4>Shift Date: </h4>
+            <RadzenDatePicker @bind-Value="MetricDate" TValue="DateTime" DateFormat="d" ShowTime="false" Change="@(async args => await MetricDateChangeAsync(args))" class="mb-2"></RadzenDatePicker>
+            <table>
+                <tr>
+                    <td>Shift 1 Total</td>
+                    <td><RadzenNumeric TValue="decimal" @bind-Value="ShiftTotals[0]" ShowUpDown="false" class='Shift1' Change="@(args => CalcHourTotalsFromShift(1, args))" ReadOnly=@(!AllowMetricValueEdit)></RadzenNumeric></td>
+                </tr>
+                <tr>
+                    <td>Shift 2 Total</td>
+                    <td><RadzenNumeric TValue="decimal" @bind-Value="ShiftTotals[1]" ShowUpDown="false" class='Shift2' Change="@(args => CalcHourTotalsFromShift(2, args))" ReadOnly=@(!AllowMetricValueEdit)></RadzenNumeric></td>
+                </tr>
+                <tr>
+                    <td>Shift 3 Total</td>
+                    <td><RadzenNumeric TValue="decimal" @bind-Value="ShiftTotals[2]" ShowUpDown="false" class='Shift3' Change="@(args => CalcHourTotalsFromShift(3, args))" ReadOnly=@(!AllowMetricValueEdit)></RadzenNumeric></td>
+                </tr>
+            </table>
+            <RadzenButton Text="Save" Visible="AllowMetricValueEdit" Click="SaveHourlyBtnClickAsync" IsBusy="IsSaving" />
+        </div>
+
+    </div>
+
+
+</RadzenCard>
+
+
+
+@code {
+
+
+    /// <summary>
+    /// Array of Metric IDs to show,  If null then we will show every metric the user has access to
+    /// </summary>
+    [Parameter]
+    public int[]? MetricIds { get; set; } = new int[0];
+
+
+    private List<DAL.Models.Metric> MetricList = new();
+    private DAL.Models.Metric? SelectedMetric;
+    private List<DAL.Models.Metric_Value> MetricValList = new();
+
+    private DateTime MetricDate = DateTime.Today;
+    private decimal[] ShiftTotals = { 0, 0, 0 };
+
+    private bool AllowMetricValueEdit = true;
+
+    private int DaysBackAllow = 10;   //number of days back to allow for metric value edit
+
+    bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        DaysBackAllow = int.Parse(MOO.Data.ReadDBKey("METRIC_VALUE_ADJ_DAYS_BACK", "10"));
+        //only grab metrics that are active, have roles or users assigned and not collection type 6
+        List<DAL.Models.Metric>? fullList = await Task.Run(() => DAL.Services.MetricSvc.GetAll()
+                                                    .FindAll(x => x.Coll_Type.Coll_Type_Id != 6 && x.Coll_Type.Coll_Type_Id != 5 && x.Isactive && (!string.IsNullOrEmpty(x.UserListCSV) || !string.IsNullOrEmpty(x.RoleListCSV)))
+                                                    .OrderBy(x => x.FullNameWithPath).ToList());
+
+
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var usr = await Task.Run(() => MOO.DAL.ToLive.Services.Sec_UserSvc.Get(authState.User!.Identity!.Name));
+        if (usr != null)
+        {
+            MetricList = [];
+            var roles = await Task.Run(() => MOO.DAL.ToLive.Services.Sec_RoleSvc.GetRolesByUser(usr));
+            //add only items user has access to
+            //I chose to pull the roles into a list and then do a comparison rather than do a User.IsInRole call as that seemed to run slower
+            foreach (var m in fullList)
+            {
+                //Metric ids gives a list of what we want to show, if this is null or empty then we will show all
+                if (MetricIds == null || MetricIds.Count() == 0 || MetricIds.Contains(m.Metric_Id))
+                {
+                    if (roles.FirstOrDefault(x => string.Equals("Admin", x.Role_Name, StringComparison.InvariantCultureIgnoreCase)) != null)
+                        MetricList.Add(m);
+                    else
+                    {
+                        foreach (var r in m.RoleList)
+                            if (roles.FirstOrDefault(x => string.Equals(r, x.Role_Name, StringComparison.InvariantCultureIgnoreCase)) != null)
+                                MetricList.Add(m);
+
+                        foreach (var u in m.UserList)
+                            if (string.Equals(u, authState.User.Identity!.Name, StringComparison.InvariantCultureIgnoreCase))
+                                MetricList.Add(m);
+                    }
+                }
+
+            }
+        }
+
+
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task MetricChangeAsync()
+    {
+        await GetMetricValueDataAsync();
+
+    }
+
+
+    private async Task MetricDateChangeAsync(DateTime? NewDate)
+    {
+        //check to see if we will allow the edit.  We only allow edits X days back because the Keetac Pivot Warehouse function that regenerates report data only runs X days back (usually 10)
+        //if this is requested to be changed, then we need to rerun the pivot warehouse function
+        if (NewDate.HasValue)
+        {
+            
+            AllowMetricValueEdit = (DateTime.Now.Subtract(NewDate.Value).TotalDays < DaysBackAllow);
+            await GetMetricValueDataAsync();
+        }
+        else
+            AllowMetricValueEdit = false;
+
+
+    }
+
+    private async Task GetMetricValueDataAsync()
+    {
+        if (SelectedMetric != null)
+        {
+            DateTime startDate, endDate;
+
+            DateTime[] startEnd = MOO.Shifts.Shift8.ShiftStartEndTime(MetricDate, SelectedMetric.Process_Level.Site);
+
+            startDate = startEnd[0];
+            endDate = startEnd[0].AddDays(1).AddSeconds(-1);
+            MetricValList = await Task.Run(() => DAL.Services.Metric_ValueSvc.GetByDateRange(SelectedMetric.Metric_Id, startDate, endDate).OrderBy(x => x.Start_Date).ToList());
+            CalcShiftTotals();
+
+        }
+    }
+    //Caclulates the shift totals for the Metric Value Edits shift and stores into the ShiftTotals
+    private void CalcShiftTotals()
+    {
+        ShiftTotals[0] = MetricValList.FindAll(x => x.Shift == 1).Sum(x => x.Value).GetValueOrDefault(0);
+        ShiftTotals[1] = MetricValList.FindAll(x => x.Shift == 2).Sum(x => x.Value).GetValueOrDefault(0);
+        ShiftTotals[2] = MetricValList.FindAll(x => x.Shift == 3).Sum(x => x.Value).GetValueOrDefault(0);
+
+    }
+    private void CalcHourTotalsFromShift(short ShiftNbr, decimal NewVal)
+    {
+        //we will adjust the hourly values based on the entered total of the shift
+        decimal shiftTotal = MetricValList.FindAll(x => x.Shift == ShiftNbr).Sum(x => x.Value).GetValueOrDefault(0);
+        decimal rollTot = 0;
+        var lastMVal = MetricValList.FindAll(x => x.Shift == ShiftNbr).OrderByDescending(x => x.Hour).ToArray()[0];
+        foreach (var mVal in MetricValList.FindAll(x => x.Shift == ShiftNbr).OrderBy(x => x.Hour))
+        {
+            if (NewVal == 0)
+            {
+                mVal.Value = 0;
+            }
+            else if (mVal == lastMVal)
+            {
+                //last value in the list will get the remainder
+                mVal.Value = NewVal - rollTot;
+            }
+            else
+            {
+                mVal.Value = Math.Round((mVal.Value.GetValueOrDefault(0) / shiftTotal) * NewVal, 2, MidpointRounding.AwayFromZero);
+                rollTot += mVal.Value.GetValueOrDefault(0);
+            }
+
+        }
+    }
+
+    async Task SaveHourlyBtnClickAsync()
+    {
+        IsSaving = true;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string modifiedBy = authState.User.Identity!.Name!;
+        foreach (var v in MetricValList)
+        {
+            await Task.Run(() => DAL.Services.Metric_ValueSvc.UpdateWithAudit(v, modifiedBy));
+        }
+        NotificationMessage msg = new()
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Modification Saved",
+                Detail = $"Data modification has been recorded.",
+                Duration = 4000
+            };
+        notificationService.Notify(msg);
+        await GetMetricValueDataAsync();
+        IsSaving = false;
+    }
+}

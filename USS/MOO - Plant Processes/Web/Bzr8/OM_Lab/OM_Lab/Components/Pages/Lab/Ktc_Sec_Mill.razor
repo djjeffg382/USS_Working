@@ -1,0 +1,327 @@
+﻿@page "/lab_ktc_sec_mill"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,LabDatEnt")]
+@using System.Text
+@using System.Data
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using Core = MOO.DAL.Core
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>@Util.PROGRAM_TITLE - KTC Secondary Mill</PageTitle>
+<SectionContent SectionName="page-title">KTC Secondary Mill</SectionContent>
+
+<div class="row mb-2">
+    <div class="col-2">
+        <RadzenDatePicker @bind-Value=@SelectedLabDate DateFormat="d" Change="SelectedDateChangedAsync" />
+    </div>
+    <div class="col-4">
+        <RadzenSelectBar TValue="byte" @bind-Value="@SelectedShift" Change="SelectedDateChangedAsync">
+            <Items>
+                <RadzenSelectBarItem Value=@((byte)1) Text="Night Shift (1)" />
+                <RadzenSelectBarItem Value=@((byte)2) Text="Day Shift (2)" />
+            </Items>
+        </RadzenSelectBar>
+    </div>
+    <div class="col-4">
+        <RadzenButton Text="Save" Click="SaveBtnClickAsync" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+    </div>
+</div>
+
+<div class="row" style="min-width:1000px">
+    <div class="col-10">
+        <h3>All screen data is entered in grams</h3>
+        <RadzenDataGrid @ref="grdLabScrn" AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data=@LabData
+                        TItem="Data.Models.LabChemPhys" style="height:300px">
+            <HeaderTemplate>
+                <RadzenButton Text="Add Line" Click="AddLineBtnClick" ButtonStyle="ButtonStyle.Secondary" />
+            </HeaderTemplate>
+            <Columns>
+
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Title="">
+                    <Template Context="data">
+                        <RadzenButton Icon="delete" Click="@(args => DeleteRowBtnClick(data))" ButtonStyle="ButtonStyle.Danger" title="Removes Selected Line" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="LineNumber" Title="Line" SortOrder="SortOrder.Ascending" Width="60px">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.LineNumber" Min="1" Max="5" Step="1" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="SampleDate" Title="Sample Date" SortOrder="SortOrder.Ascending" Width="140px">
+                    <Template Context="data">
+                        <RadzenDatePicker @bind-Value="data.SampleDate" DateFormat="MM/dd HH:mm" ShowTime="true" ShowSeconds="false" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Phys_Analysis.Start_Wgt" Title="Start Weight" Width="110px">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Phys_Analysis.Start_Wgt" ShowUpDown="false" Min="0" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Phys_Analysis.Mesh_100_Wgt" Title="+100 Mesh">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Phys_Analysis.Mesh_100_Wgt" ShowUpDown="false" Min="0" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Phys_Analysis.Mesh_200_Wgt" Title="+200 Mesh">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Phys_Analysis.Mesh_200_Wgt" ShowUpDown="false" Min="0" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Phys_Analysis.Mesh_325_Wgt" Title="+325 Mesh">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Phys_Analysis.Mesh_325_Wgt" ShowUpDown="false" Min="0" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+
+
+
+
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.Fe" Title="Fe">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.Fe" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.SiO2" Title="SiO2">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.SiO2" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.Al2O3" Title="Al2O3">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.Al2O3" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.CaO" Title="CaO">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.CaO" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.MgO" Title="MgO">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.MgO" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.LabChemPhys" Property="Chem_Analysis.Mn" Title="Mn">
+                    <Template Context="data">
+                        <RadzenNumeric @bind-Value="data.Chem_Analysis.Mn" ShowUpDown="false" Min="0" Max="100" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+@code {
+
+
+    /// <summary>
+    /// Id of the Keetac Secondary Mill Lab_Phys_Type
+    /// </summary>
+    const short LAB_PHYS_TYPE_ID = 13;
+
+    /// <summary>
+    /// Id of the Keetac Secondary Mill Lab_Chem_Type
+    /// </summary>
+    const short LAB_CHEM_TYPE_ID = 26;
+
+    DateTime SelectedLabDate = DateTime.Today;
+    DateTime SampleDate = DateTime.MinValue;
+    byte SelectedShift = 1;
+    List<Data.Models.LabChemPhys> LabData = [];
+
+    List<Data.Models.LabChemPhys> DeletedLabData = [];
+    RadzenDataGrid<Data.Models.LabChemPhys>? grdLabScrn;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (DateTime.Now.Hour >= 19)
+                SelectedLabDate = DateTime.Today.AddDays(1);
+            await GetDataAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    async Task SelectedDateChangedAsync()
+    {
+        await GetDataAsync();
+    }
+
+    async Task GetDataAsync()
+    {
+        var sVal = MOO.Shifts.Shift.GetShiftVal(MOO.Plant.Keetac, MOO.Area.Agglomerator, SelectedLabDate, SelectedShift);
+        SampleDate = sVal.ShiftStartTime;
+        LabData = Data.Services.LabChemPhysSvc.GetByShift(SelectedLabDate, SelectedShift, LAB_CHEM_TYPE_ID, LAB_PHYS_TYPE_ID);
+        await grdLabScrn!.Reload();
+        StateHasChanged();
+
+    }
+
+
+    void AddLineBtnClick()
+    {
+        var newRec = new Data.Models.LabChemPhys(LAB_CHEM_TYPE_ID, LAB_PHYS_TYPE_ID)
+            {
+                LineNumber = 1,
+                SampleDate = DateTime.Now
+            };
+        newRec.Chem_Analysis.Shift_Date12 = SelectedLabDate;
+        newRec.Chem_Analysis.Shift_Nbr12 = SelectedShift;
+        newRec.Chem_Analysis.Shift_Date8 = SelectedLabDate;
+        newRec.Chem_Analysis.Shift_Nbr8 = SelectedShift;
+
+        newRec.Phys_Analysis.Shift_Date12 = SelectedLabDate;
+        newRec.Phys_Analysis.Shift_Nbr12 = SelectedShift;
+        newRec.Phys_Analysis.Shift_Date8 = SelectedLabDate;
+        newRec.Phys_Analysis.Shift_Nbr8 = SelectedShift;
+
+
+
+        LabData.Add(newRec);
+
+        grdLabScrn!.Reload();
+        StateHasChanged();
+    }
+    void DeleteRowBtnClick(Data.Models.LabChemPhys row)
+    {
+        LabData.Remove(row);
+        DeletedLabData.Add(row);
+        grdLabScrn!.Reload();
+    }
+
+    bool ValidateData()
+    {
+        var startEndTime = MOO.Shifts.Shift.ShiftStartEndTime(MOO.Plant.Keetac, MOO.Area.Concentrator, SelectedLabDate, SelectedShift);
+        foreach (var labDat in LabData)
+        {
+            //check for sample time within shift time
+            if (labDat.SampleDate < startEndTime[0] || labDat.SampleDate > startEndTime[1])
+            {
+                NotifySaveError($"Invalid Entry Line {labDat.LineNumber}", $"Analysis date should be between {startEndTime[0]:MM/dd/yyyy HH:mm} and {startEndTime[1]:MM/dd/yyyy HH:mm}");
+                return false;
+            }
+
+            if (labDat.Phys_Analysis.Mesh_65_70_Wgt > labDat.Phys_Analysis.Mesh_100_Wgt)
+            {
+                NotifySaveError($"Invalid Entry Line {labDat.LineNumber}", "65 Mesh must be less than mesh 100");
+                return false;
+            }
+            if (labDat.Phys_Analysis.Mesh_100_Wgt > labDat.Phys_Analysis.Mesh_200_Wgt)
+            {
+                NotifySaveError($"Invalid Entry Line {labDat.LineNumber}", "100 Mesh must be less than mesh 200");
+                return false;
+            }
+            if (labDat.Phys_Analysis.Mesh_200_Wgt > labDat.Phys_Analysis.Mesh_325_Wgt)
+            {
+                NotifySaveError($"Invalid Entry Line {labDat.LineNumber}", "200 Mesh must be less than mesh 325");
+                return false;
+            }
+            if (labDat.Phys_Analysis.Mesh_325_Wgt > labDat.Phys_Analysis.Start_Wgt)
+            {
+                NotifySaveError($"Invalid Entry Line {labDat.LineNumber}", "325 Mesh must be less than or equal to start weight");
+                return false;
+            }
+        }
+        //check for duplicate lines
+        var dups = LabData.GroupBy(x => x.LineNumber)
+              .Where(g => g.Count() > 1)
+              .Select(y => y.Key)
+              .ToList();
+        if (dups.Any())
+        {
+            NotifySaveError("Invalid Line", $"You have more than one entry for line {dups[0]}");
+            return false;
+        }
+
+
+
+        return true;
+    }
+
+
+    /// <summary>
+    /// Used to send notification to user on invalid data entry before saving
+    /// </summary>
+    /// <param name="Msg"></param>
+    void NotifySaveError(string Title, string Msg)
+    {
+        notificationService.Notify(new NotificationMessage()
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = Title,
+                Detail = Msg,
+                Duration = 6000
+            });
+    }
+
+
+    async Task SaveBtnClickAsync()
+    {
+        if (!ValidateData())
+            return;
+        //Saving the data involves Deleting the current Shift and line and then Re-Insert
+        //This needs to be done as the user may have changed line numbers since save or removed and reinserted lines
+        //we will do this in a transaction in case an error occurs
+        bool isSaved = false;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string? usr = authState.User?.Identity?.Name;
+        using OracleConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.DMART));
+        conn.Open();
+        var trans = conn.BeginTransaction();
+        try
+        {
+            //delete all of the records for the shift
+            foreach (var labDat in LabData)
+            {
+                await Task.Run(() => DAL.Services.Lab_Phys_AnalysisSvc.Delete(labDat.Phys_Analysis, conn));
+                await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.Delete(labDat.Chem_Analysis, conn));
+                //we will change the primary key back to zero because we will re-insert these records a few lines from now
+                //The insert/update code checks if the ID is zero to determine if it is an insert or update
+                labDat.Chem_Analysis.Lab_Chem_Analysis_Id = 0;
+                labDat.Phys_Analysis.Lab_Phys_Analysis_Id = 0;
+            }
+
+            //Delete the items that the user deleted
+            foreach (var labDat in DeletedLabData)
+            {
+                await Task.Run(() => DAL.Services.Lab_Phys_AnalysisSvc.Delete(labDat.Phys_Analysis, conn));
+                await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.Delete(labDat.Chem_Analysis, conn));
+            }
+            //now insert the new records
+            await Task.Run(() => Data.Services.LabChemPhysSvc.SaveChemPhys(LabData, conn, usr!));
+
+            trans.Commit();
+            DeletedLabData.Clear();
+            isSaved = true;
+        }
+        catch (Exception)
+        {
+            if (trans != null)
+                trans.Rollback();
+            throw;
+        }
+        finally
+        {
+            conn.Close();
+        }
+        if (isSaved)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Record Saved",
+                    Detail = "Records Saved Successfully",
+                    Duration = 3000
+                });
+
+        }
+
+    }
+
+
+}

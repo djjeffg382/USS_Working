@@ -1,0 +1,55 @@
+@page "/davis-tube"
+
+<PageTitle>Davis Tube Results</PageTitle>
+
+<RadzenCard Variant="Variant.Outlined" Style="max-width:600px;margin:auto;">
+    <RadzenText Text="Davis Tube - Shift Entry" TextStyle="TextStyle.H4" Style="margin-bottom:20px;" />
+    <RadzenRow>
+        <RadzenColumn Width="8">
+            <RadzenText Text=@($"FOR {SelectedDate:dd-MMM-yyyy}") TextStyle="TextStyle.H5" />
+        </RadzenColumn>
+        <RadzenColumn Width="4" Style="text-align:right;">
+            <RadzenButton Text="Select Date" Click="ShowDateDialog" />
+        </RadzenColumn>
+    </RadzenRow>
+    <RadzenTabs>
+        <Tabs>
+        <RadzenTabsItem Text="1st Shift">
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT." TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT %" TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. CONC. SiO2" TextStyle="TextStyle.H6" /></RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="FirstShiftWt" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="FirstShiftWtPct" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="FirstShiftConcSiO2" Style="width:100%;" /></RadzenColumn>
+            </RadzenRow>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="2nd Shift">
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT." TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT %" TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. CONC. SiO2" TextStyle="TextStyle.H6" /></RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="SecondShiftWt" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="SecondShiftWtPct" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="SecondShiftConcSiO2" Style="width:100%;" /></RadzenColumn>
+            </RadzenRow>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="3rd Shift">
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT." TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. WT %" TextStyle="TextStyle.H6" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenText Text="D.T. CONC. SiO2" TextStyle="TextStyle.H6" /></RadzenColumn>
+            </RadzenRow>
+            <RadzenRow>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="ThirdShiftWt" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="ThirdShiftWtPct" Style="width:100%;" /></RadzenColumn>
+                <RadzenColumn Width="4"><RadzenTextBox @bind-Value="ThirdShiftConcSiO2" Style="width:100%;" /></RadzenColumn>
+            </RadzenRow>
+        </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</RadzenCard>

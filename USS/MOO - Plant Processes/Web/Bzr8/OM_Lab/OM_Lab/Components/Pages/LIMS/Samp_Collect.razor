@@ -1,0 +1,130 @@
+﻿@page "/lims_samp_collect"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,M_LAB_MGR,A_LAB_CLCT")]
+@inject NotificationService NotificationService
+
+
+
+
+<style type="text/css">
+    .SampNotFound {
+        border: solid red 3px !important;
+    }
+
+</style>
+
+<PageTitle>@Util.PROGRAM_TITLE - LIMS Collect Sample</PageTitle>
+<PageTitle>Sample Collect</PageTitle>
+
+
+<RadzenCard>
+    <div class="row mb-4">
+        <div class="col-5">
+            <RadzenNumeric class="w-100" ShowUpDown="false" TValue="int?" @bind-Value=@EnterSampleId @onkeyup="SampleEntryKeyPress"
+                           Placeholder="Click here and scan samples or Type sample number and hit enter" />
+        </div>
+        <div class="col-4">
+        </div>
+    </div>
+
+    <div>
+        <h2>Samples Collected</h2>
+        <RadzenButton Click=@(() => SampList = new()) Text="Clear List" />
+    </div>
+
+    <RadzenDataList WrapItems="true" AllowPaging="false" Data="@SampList" TItem="LIMS.Models.Sample" style="height:500px;overflow-y:scroll">
+        <Template Context="sample">
+            <RadzenCard class=@(sample.Login_Date == null ? "SampNotFound":"") Style="width: 100%; padding: 0; overflow: hidden;">
+
+                <div class="container">
+                    <div class="row">
+                        <div class="col-3">
+                            <h5 class="mb-0">Sample Number</h5>
+                            @(sample.Id_Numeric)
+                        </div>
+                        <div class="col-5">
+                            <h5 class="mb-0">Sample Point</h5>
+                            @(sample.Sampling_Point.Name)
+                        </div>
+
+                        <div class="col-2">
+                            <h5 class="mb-0">Login Date</h5>
+                            @(sample.Login_Date?.ToString("MM/dd/yyyy"))
+                        </div>
+
+                        <div class="col-2">
+                            <h5 class="mb-0">Collected Date</h5>
+                            @(sample.Collected_Date?.ToString("MM/dd/yyyy HH:mm"))
+                        </div>
+
+                    </div>
+                </div>
+            </RadzenCard>
+        </Template>
+    </RadzenDataList>
+
+</RadzenCard>
+
+@code {
+    private List<LIMS.Models.Sample> SampList = new();
+    private int? EnterSampleId;
+    private const string SAMP_NOT_FOUND = "Sample Not Found!!";
+
+
+    private async Task SampleEntryKeyPress(KeyboardEventArgs e){
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await CollectSampleAsync();
+        }
+    }
+
+    private async Task CollectSampleAsync()
+    {
+        if (EnterSampleId.HasValue)
+        {
+            LIMS.Models.Sample samp;
+            try
+            {
+
+                samp = await Task.Run(() => LIMS.Services.SampleSvc.Get(EnterSampleId.Value));
+                if (samp == null)
+                {
+                    samp = new();
+                    //didn't find the sample so we will make a dummy sample so the user can see it was not found
+                    samp.Id_Numeric = EnterSampleId.Value;
+                    samp.Sampling_Point = new LIMS.Models.Sample_Point() { Name = SAMP_NOT_FOUND };
+                    SampList.Add(samp);
+
+                }
+                else
+                {
+                    //now update the collected date
+                    DateTime collectedDate = DateTime.Now;
+                    string error = await Task.Run(() => LIMS.Services.LimsML.SetCollected(EnterSampleId.Value, collectedDate));
+                    if(string.IsNullOrEmpty(error)){
+                        samp.Collected_Date = collectedDate;
+                        SampList.Add(samp);
+                    }else{
+                        Log.Warning($"Error collecting sample {EnterSampleId} - Error: {error}");
+                        NotificationService.Notify(NotificationSeverity.Warning, "Collect Sample Error", error, 10000);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                samp = new();
+                //Error on the sample show this
+                samp.Id_Numeric = EnterSampleId.Value;
+                samp.Sampling_Point = new LIMS.Models.Sample_Point() { Name = $"Error trying to update sample: {ex.Message}" };
+                SampList.Add(samp);
+                await Task.Run(() => MOO.Exceptions.ErrorLog.LogError("bzr/OM_Lab", ex));
+            }
+            //clear the entry
+            EnterSampleId = null;
+        }
+
+    }
+}

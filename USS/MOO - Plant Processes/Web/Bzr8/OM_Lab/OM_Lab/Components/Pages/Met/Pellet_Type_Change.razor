@@ -1,0 +1,179 @@
+﻿@page "/met_pellet_type_change"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+
+@inject Radzen.DialogService DialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Pellet Type Change</PageTitle>
+<SectionContent SectionName="page-title">Pellet Type Change</SectionContent>
+
+<div class="row" style="min-width:800px">
+    <div class="col-6">
+        <RadzenCard class="m-3">
+            <h3>Step 1/2 Agglomerator Pellet Type</h3>
+            <div class="row">
+                <div class="col-6">
+
+                    <div class="d-flex">
+                        <span style="font-weight:bold">Current Pellet Type:</span>
+                        @(CurrentAgg2Type.Pel_Type == null? "" : CurrentAgg2Type.Pel_Type.Material)<br />
+                    </div>
+                </div>
+
+                <div class="col-6 d-flex align-items-center justify-content-end">
+
+                    <RadzenButton Text="Change Pellet Type" Click="Agg2PelletTypeBtnClickAsync" class="m-2"></RadzenButton>
+                </div>
+
+            </div>
+
+
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="true" Data="@Agg2History"
+                            TItem="DAL.Models.Pellet_Type_History" style="width:350px;height:500px" >
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Sortable="false">
+                        <Template Context="data">
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(data))" @onclick:stopPropagation="true" title="Delete">
+                            </RadzenButton>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Property="Pel_Type.Material" Title="Factor Value" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Property="Start_Date" Title="Effective_Date" FormatString="{0:MM/dd/yyyy}" SortOrder="SortOrder.Descending" />
+
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenCard>
+
+    </div>
+    <div class="col-6">
+        <RadzenCard class="m-3">
+            <h3>Step 3 Agglomerator Pellet Type</h3>
+            <div class="row">
+                <div class="col-6">
+
+                    <div class="d-flex">
+                        <span style="font-weight:bold">Current Pellet Type:</span>
+                        @(CurrentAgg3Type.Pel_Type == null? "" : CurrentAgg3Type.Pel_Type.Material)<br />
+                    </div>
+                </div>
+
+                <div class="col-6 d-flex align-items-center justify-content-end">
+
+                    <RadzenButton Text="Change Pellet Type" Click="Agg3PelletTypeBtnClickAsync" class="m-2"></RadzenButton>
+                </div>
+
+            </div>
+
+
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="true" Data="@Agg3History"
+                            TItem="DAL.Models.Pellet_Type_History" style="width:350px;height:500px" >
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Sortable="false">
+                        <Template Context="data">
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Class="m-1" Click="@(args => DeleteRow(data))" @onclick:stopPropagation="true" title="Delete">
+                            </RadzenButton>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Property="Pel_Type.Material" Title="Factor Value" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Pellet_Type_History" Property="Start_Date" Title="Effective_Date" FormatString="{0:MM/dd/yyyy}" SortOrder="SortOrder.Descending" />
+
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenCard>
+    </div>
+</div>
+
+
+
+@code {
+    private DAL.Models.Pellet_Type_History CurrentAgg2Type = new();
+    private List<DAL.Models.Pellet_Type_History> Agg2History = new();
+
+
+
+    private DAL.Models.Pellet_Type_History CurrentAgg3Type = new();
+    private List<DAL.Models.Pellet_Type_History> Agg3History = new();
+    IList<DAL.Models.Pellet_Type_History> Agg3HistSelect = new List<DAL.Models.Pellet_Type_History>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await LoadPageData();
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task LoadPageData()
+    {
+        CurrentAgg2Type = await Task.Run(() => DAL.Services.Pellet_Type_HistorySvc.GetLatest(2, DateTime.Today));
+        CurrentAgg3Type = await Task.Run(() => DAL.Services.Pellet_Type_HistorySvc.GetLatest(3, DateTime.Today));
+
+
+        Agg2History = await Task.Run(() => DAL.Services.Pellet_Type_HistorySvc.GetAll(2));
+        Agg3History = await Task.Run(() => DAL.Services.Pellet_Type_HistorySvc.GetAll(3));
+    }
+
+
+    private async Task ChangePellTypeAsync(byte AgglStep, DAL.Models.Pellet_Type DefaultPellType)
+    {
+        DAL.Models.Pellet_Type_History pelHistNew = new()
+            {
+                Ag_Step = AgglStep,
+                Start_Date = DateTime.Today,
+                Pel_Type = DefaultPellType
+            };
+
+
+        await DialogService.OpenAsync<Dialogs.AddEditPelletTypeHist>("Pellet Type Change",
+                   new Dictionary<string, object>() { { "PtypeHist", pelHistNew }, { "IsInsert", true } },
+                   new DialogOptions() { Width = "400px", Height = "350px", Resizable = false, Draggable = true });
+    }
+
+    private async Task Agg2PelletTypeBtnClickAsync()
+    {
+        //get the pellet type of the latest value, default the new selection to the other material type
+        DAL.Models.Pellet_Type defaultVal = new();
+        //get the list of pellet types (should only be 2)
+        List<DAL.Models.Pellet_Type> ptLst = DAL.Services.Pellet_TypeSvc.GetAll();
+        foreach (var pt in ptLst)
+        {
+            if (pt.Code != CurrentAgg2Type.Pel_Type.Code)
+                defaultVal = pt;
+        }
+        await ChangePellTypeAsync(2, defaultVal);
+        await LoadPageData();
+    }
+    
+    private async Task Agg3PelletTypeBtnClickAsync()
+    {
+        //get the pellet type of the latest value, default the new selection to the other material type
+        DAL.Models.Pellet_Type defaultVal = new();
+        //get the list of pellet types (should only be 2)
+        List<DAL.Models.Pellet_Type> ptLst = DAL.Services.Pellet_TypeSvc.GetAll();
+        foreach (var pt in ptLst)
+        {
+            if (pt.Code != CurrentAgg2Type.Pel_Type.Code)
+                defaultVal = pt;
+        }
+        await ChangePellTypeAsync(3, defaultVal);
+        await LoadPageData();
+    }
+
+    private async Task DeleteRow(DAL.Models.Pellet_Type_History changeHist)
+        {
+            var result = await DialogService!.Confirm($"Remove Pellet Change {changeHist.Start_Date:MM/dd/yyyy}", "Remove", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+            if (result != null &&  result.Value)
+            {
+                DAL.Services.Pellet_Type_HistorySvc.Delete(changeHist);
+                await LoadPageData();
+            }
+
+        }
+
+}

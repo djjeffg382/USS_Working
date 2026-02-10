@@ -1,0 +1,214 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Radzen.DialogService dialogService
+@using MOO.Enums.Extension
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+
+
+<div class="row">
+    <div class="col-4 mb-2">
+        <h6>Start Date:</h6>
+        @if (IsInsert)
+        {
+            <RadzenDatePicker @bind-Value=@PellSpec.Start_Date DateFormat="d" ShowTime="false" ReadOnly="!IsInsert" />
+        }
+        else
+        {
+            @PellSpec.Start_Date.ToString("MM/dd/yyyy HH:mm")
+        }
+
+    </div>
+    <div class="col-4">
+        <h6>End Date:</h6>
+        @if (PellSpec.End_Date == null)
+        {
+            <span>End date will be set when a new spec is created for this product</span>
+        }
+        else
+        {
+            @PellSpec.End_Date?.ToString("MM/dd/yyyy HH:mm")
+        }
+
+    </div>
+
+    <div class="col-4">
+        <h6>Product:</h6>
+        @if (IsInsert)
+        {
+            <RadzenDropDown Data="PLOProducts" TValue="DAL.Models.PLO_Product" @bind-Value="PellSpec.Product" TextProperty="Product_Name" ReadOnly="!IsInsert" />
+        }else
+        {
+            @PellSpec.Product?.Product_Name
+        }
+    </div>
+</div>
+
+<RadzenDataGrid AllowFiltering="false" AllowSorting="true" Density="Density.Compact"
+                Data="@PellSpecValues" TItem="DAL.Models.PLO_Pellet_Spec_Values" Style="height:500px">
+    <Columns>
+        <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec_Values" Property="Spec" Title="Spec" Width="150px">
+            <Template>
+                @context.Spec.GetDisplay().Name
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec_Values" Property="Spec" Title="Description" Width="200px">
+            <Template>
+                @context.Spec.GetDisplay().Description
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec_Values" Property="Default" Title="Typical Value" Width="150px">
+            <Template>
+                <RadzenNumeric @bind-Value=@context.Typical_Value ShowUpDown="false" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec_Values" Property="Min_Value" Title="Min Value" Width="150px">
+            <Template>
+                <RadzenNumeric @bind-Value=@context.Min_Value ShowUpDown="false" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec_Values" Property="Max_Value" Title="Max Value" Width="150px">
+            <Template>
+                <RadzenNumeric @bind-Value=@context.Max_Value ShowUpDown="false" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+<div class="col-md-12 text-right mt-4">
+    <RadzenButton Icon="done" Text="Save" Click="SaveDataAsync" />
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => dialogService.Close(false))" />
+</div>
+
+@code {
+    /*
+    * This dialog will be used for the Met Entry forms for changing the date
+    */
+    [Parameter] public DAL.Models.PLO_Pellet_Spec PellSpec { get; set; } = new();
+
+    [Parameter]
+    public List<DAL.Models.PLO_Pellet_Spec_Values> PellSpecValues { get; set; } = [];
+
+    bool IsInsert;
+    private List<DAL.Models.PLO_Product> PLOProducts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        PLOProducts = await Task.Run(() => DAL.Services.PLO_ProductSvc.GetAll().OrderBy(x => x.Product_Name).ToList());
+
+        IsInsert = PellSpec.Plo_Pellet_Spec_Id <= 0;
+        if (IsInsert)
+            PellSpec.Start_Date = DateTime.Today;
+        await base.OnInitializedAsync();
+    }
+
+    private bool ValidateUserEntry()
+    {
+        if(PellSpec.Product == null)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = $"Product is required",
+                    Duration = 6000
+                });
+            return false;
+        }
+        if (IsInsert)
+        {
+            //Check the date.  Need to make sure the date is set later than the latest start date for this product
+            //only need to check on insert as edits do not allow date or product change
+
+            var specList = DAL.Services.PLO_Pellet_SpecSvc.GetAll().FindAll(x => x.Product.Product_Id == PellSpec.Product.Product_Id).OrderByDescending(x => x.Start_Date).ToList();
+            if (specList.Any())
+            {
+                if (PellSpec.Start_Date <= specList[0].Start_Date)
+                {
+                    notificationService.Notify(new NotificationMessage()
+                        {
+                            Severity = NotificationSeverity.Warning,
+                            Summary = "Invalid Entry",
+                            Detail = $"Start Date must be later than the latest spec that already exists for this product {specList[0].Start_Date:MM/dd/yyyy}",
+                            Duration = 6000
+                        });
+                    return false;
+                }
+            }
+        }
+        
+
+        //if we get here, we are good
+        return true;
+    }
+
+    private async Task SaveDataAsync()
+    {
+        if (!ValidateUserEntry())
+            return;
+        string updateUser = "";
+        var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var usr = auth.User?.Identity?.Name;
+        if (usr != null)
+        {
+            var adUsr = MOO.AD.AdUserProvider.GetAdUser(usr);
+            if (adUsr != null)
+                updateUser = adUsr.GivenName + " " + adUsr.Surname;
+        }
+
+
+        using OracleConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.DMART));
+        conn.Open();
+        OracleTransaction trans = conn.BeginTransaction();
+        try
+        {
+            //need to first set the end date of whatever is currently open
+            if (IsInsert)
+            {
+                var currentSpec = await Task.Run(() =>
+                                        DAL.Services.PLO_Pellet_SpecSvc.GetAll().FirstOrDefault(x => x.Product.Product_Id == PellSpec.Product.Product_Id && x.End_Date == null));
+                if (currentSpec != null)
+                {
+                    //set end date to one second before start date of this
+                    currentSpec.End_Date = PellSpec.Start_Date.AddSeconds(-1);
+                    DAL.Services.PLO_Pellet_SpecSvc.Update(currentSpec, conn);
+                }
+            }
+            //add/update the header record
+            PellSpec.Modified_Date = DateTime.Now;
+            PellSpec.Modified_By = updateUser;
+            if (IsInsert)
+                await Task.Run(() => DAL.Services.PLO_Pellet_SpecSvc.Insert(PellSpec, conn));
+            else
+                await Task.Run(() => DAL.Services.PLO_Pellet_SpecSvc.Update(PellSpec, conn));
+
+            foreach (var specVal in PellSpecValues)
+            {
+                if (IsInsert)
+                    await Task.Run(() => DAL.Services.PLO_Pellet_Spec_ValuesSvc.Insert(specVal, conn));
+                else
+                    await Task.Run(() => DAL.Services.PLO_Pellet_Spec_ValuesSvc.Update(specVal, conn));
+            }
+
+            trans.Commit();
+            dialogService.Close(false);
+        }
+        catch (Exception)
+        {
+            trans.Rollback();
+            throw;
+
+        }
+        finally
+        {
+            conn.Close();
+        }
+    }
+
+
+
+
+
+
+}

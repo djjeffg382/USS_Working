@@ -1,0 +1,45 @@
+﻿@using System.Text.Json
+<style type="text/css">
+    .MooMenuTitle{
+        font-size:1.2rem;
+    } 
+    .MooMenuSubLink {
+        font-size: 1rem;
+    }
+</style>
+<RadzenMenu >
+    <RadzenMenuItem Text="@MenuTitle" class="MooMenuTitle">
+        @for(int n = 0; n < MooMenu?.Count; n++)
+        {
+            @if(n > 0)
+            {
+                <hr />
+            }
+            @foreach(var item in MooMenu[n])
+            {
+                <RadzenMenuItem Text="@item.name" Path="@item.url" class="MooMenuSubLink"/>
+            }
+        }       
+    </RadzenMenuItem>
+</RadzenMenu>
+@code {
+    [Parameter] public string MenuTitle { get; set; } = "";
+
+    private const string PORTAL_JSON_FILE = @"C:\MOOGlobalSettings\PortalMenu.json";
+    private List<List<MooMenuItem>>? MooMenu = new();
+
+
+
+    private class MooMenuItem
+    {
+        public string name { get; set; } = "";
+        public string url { get; set; } = "";
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        string jsonString = File.ReadAllText(PORTAL_JSON_FILE);
+        MooMenu = JsonSerializer.Deserialize<List<List<MooMenuItem>>>(jsonString);
+
+        await base.OnInitializedAsync();
+    }
+}

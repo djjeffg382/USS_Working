@@ -1,0 +1,59 @@
+@page "/compression-test"
+@inherits CompressionTestPage
+
+<RadzenCard Variant="Variant.Outlined" Style="max-width:1000px;margin:auto;background:black;color:white;">
+    <div style="font-family:monospace; font-size:1.2rem; display:flex; flex-direction:row;">
+        <div style="flex:1; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:1.3rem;">UNASSIGNED COMPRESSION TEST DATA</span>
+                <span style="font-size:1.1rem;">11:28 AM</span>
+            </div>
+            <div style="display:flex; gap:20px; margin-bottom:20px;">
+                <RadzenButton Text="View Sample" ButtonStyle="ButtonStyle.Primary" Style="width:180px;" />
+                <RadzenButton Text="Delete Sample" ButtonStyle="ButtonStyle.Danger" Style="width:180px;" />
+            </div>
+            <RadzenDataGrid TItem="TestResult" Data="@TestResults" RowSelect="OnRowSelect" SelectedItem="SelectedTest" Style="width:100%; font-size:1.1rem; background:#222; color:#fff; border:1px solid #888;" AllowFiltering="false" AllowPaging="false" AllowSorting="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="TestResult" Property="SeqNo" Title="SEQ NO." />
+                    <RadzenDataGridColumn TItem="TestResult" Property="Rpt" Title="RPT" />
+                    <RadzenDataGridColumn TItem="TestResult" Property="StartTime" Title="START TIME" />
+                    <RadzenDataGridColumn TItem="TestResult" Property="StopTime" Title="STOP TIME" />
+                </Columns>
+            </RadzenDataGrid>
+            <div style="border:1px solid #888; padding:10px; background:#111; margin-top:30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>14-MAY-25</span>
+                    <span>COMPRESSION TEST @SelectedTest.SeqNo</span>
+                    <span>11:29 AM</span>
+                </div>
+                <div style="margin-top:10px; margin-bottom:10px;">
+                    DATE TESTED <input type="text" value="05-14" style="width:60px; background:#222; color:#fff; border:1px solid #888; text-align:center;" />                    
+                </div>
+                <table style="width:100%; font-family:monospace; font-size:1.1rem; color:white; border-collapse:collapse;">
+                    <tr style="border-bottom:1px solid #888;">
+                        <th>#</th><th>Value</th><th>Line</th><th>Shift</th><th>Half</th><th>OK?</th>
+                    </tr>
+                    @for (int i = 1; i <= 15; i++)
+                    {
+                        <tr>
+                            <td>@i</td>
+                            <td>@(100 + i * 20 + (i % 3 == 0 ? 50 : 0))</td>
+                            <td>@(10 + i)</td>
+                            <td>@(i % 3 + 1)</td>
+                            <td>@(i % 2 + 1)</td>
+                            <td>@((i % 2 == 0) ? "Y" : "N")</td>
+                        </tr>
+                    }
+                    <tr style="border-top:2px solid #888;">
+                        <td colspan="2">MEAN 400.22</td>
+                        <td>S.D. 132.96</td>
+                        <td>-200 6.60</td>
+                        <td>-300 22.55</td>
+                        <td>MIN 112. MAX 756.</td>
+                    </tr>
+                </table>
+                <div style="margin-top:10px;">600 AVG. ADD? <input type="text" style="width:40px; background:#222; color:#fff; border:1px solid #888; text-align:center;" placeholder="Y,A" /></div>
+            </div>
+        </div>
+    </div>
+</RadzenCard>

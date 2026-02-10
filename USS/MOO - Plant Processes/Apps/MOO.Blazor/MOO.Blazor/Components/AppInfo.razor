@@ -1,0 +1,98 @@
+﻿@using System.IO
+@using System.Text
+@using System.Data
+@using System.Web;
+@inject NavigationManager NavManager
+
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Change Log">
+            <RadzenDataGrid AllowFiltering="true" FilterMode="FilterMode.Simple" AllowSorting="true" IsLoading="GridLoading"
+                            Data="@LogList" TItem="DAL.ToLive.Models.IT_System_Log" LogicalFilterOperator="LogicalFilterOperator.Or"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" AllowColumnResize="true" AllowVirtualization="true"
+                            SelectionMode="DataGridSelectionMode.Single" @bind-Value="SelectedLog" style="height:75vh">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="LogDate" Title="Date" Width="100px" FormatString="{0:MM/dd/yyyy}" />
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="ChangedBy" Title="Changed By" Width="100px" />
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="RequestedBy" Title="Req. By" Width="100px" />
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="Version" Title="Version" Width="80px" />
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="ChangeSet" Title="ChangeSet" Width="90px" />
+                    <RadzenDataGridColumn TItem="DAL.ToLive.Models.IT_System_Log" Property="LogChange" Title="Change">
+                        <Template>
+                            <span style="white-space: pre;text-wrap-mode:wrap">@context.LogChange</span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+
+
+        <RadzenTabsItem Text="Notes">
+            <RadzenTextArea Value="@ITSys?.Notes" ReadOnly="true" Cols="200" Rows="30" />
+
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Graylog Links">
+            <RadzenLink Text="All Logs Past 2 hours" Path='@($"http://mno-logs.mno.uss.com:9000/search?q=Program%3A%22{ProgNameEncoded}%22&rangetype=relative&from=7200")' Target="_blank" /><br />
+            <RadzenLink Text="All Logs Past Day" Path='@($"http://mno-logs.mno.uss.com:9000/search?q=Program%3A%22{ProgNameEncoded}%22&rangetype=relative&from=86400")' Target="_blank" /><br />
+            <RadzenLink Text="Errors Past Day" Path='@($"http://mno-logs.mno.uss.com:9000/search?q=Program%3A%22{ProgNameEncoded}%22+AND+stringLevel%3AError&rangetype=relative&from=86400")' Target="_blank" /><br />
+            <RadzenLink Text="User traffic Past Day" Path='@($"http://mno-logs.mno.uss.com:9000/search?q=Program%3A%22{ProgNameEncoded}%22+AND+Context%3ARazorRequest&rangetype=relative&from=86400")' Target="_blank" /><br />
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+
+
+
+@code {
+    private DAL.ToLive.Models.IT_System ITSys = new();
+    List<DAL.ToLive.Models.IT_System_Log> LogList = [];
+    private IList<DAL.ToLive.Models.IT_System_Log> SelectedLog = [];
+    private bool GridLoading = false;
+
+
+    /// <summary>
+    /// The Program Name field used to show logs for this program in GrayLog
+    /// </summary>
+    [Parameter]
+    public string GraylogProgramName { get; set; } = "";
+
+    /// <summary>
+    /// The IT_System id for this application
+    /// </summary>
+    [Parameter]
+    public int ITSystemId { get; set; } = -1;
+
+    public string ProgNameEncoded
+    {
+        get
+        {
+            return HttpUtility.HtmlEncode(GraylogProgramName);
+        }
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await RefreshDataAsync();
+        StateHasChanged();
+        await base.OnParametersSetAsync();
+    }
+
+
+    private async Task RefreshDataAsync()
+    {
+        if (ITSystemId > 0)
+        {
+            ITSys = await Task.Run(() => DAL.ToLive.Services.IT_SystemSvc.Get(ITSystemId));
+            if (ITSys == null)
+                ITSys = new();  //just create a blank ITSys object if not found
+            GridLoading = true;
+            LogList = await Task.Run(() => DAL.ToLive.Services.IT_System_LogSvc.GetBySystem(ITSystemId));            
+            GridLoading = false;
+            StateHasChanged();
+        }
+    }
+
+
+}

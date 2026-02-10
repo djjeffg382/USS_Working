@@ -1,0 +1,78 @@
+@page "/attfc"
+@inherits AttfcPage
+
+<RadzenPanel>
+    <HeaderTemplate>
+        <RadzenText Text="Agglomerator Pellet and Filter Cake Data report" TextStyle="TextStyle.H3" />
+    </HeaderTemplate>
+    <ChildContent>
+        <RadzenRow>
+            <RadzenColumn Width="8">
+                <RadzenText Text=@($"REPORT FOR: {SelectedDate:dd-MMM-yyyy}") TextStyle="TextStyle.H5" />
+                <RadzenButton Text="Select Date" Style="margin-left:20px;" Click="ShowDateDialog" />
+            </RadzenColumn>
+            <RadzenColumn Width="4" Style="text-align:right;">
+                <RadzenButton Text="Export PDF" ButtonStyle="ButtonStyle.Secondary" Click="ExportPdf" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Width="12">
+                <div id="attfc-report-content" style="font-family:monospace; font-size:14px; margin-top:30px;">
+                    <div style="text-align:center;">
+                        <span>RUN ON: 14-MAY-2025 00:09&nbsp;&nbsp;&nbsp;&nbsp;THRU: SHIFT 3 HALF 2</span>
+                    </div>
+                    <div style="text-align:center; margin-bottom:10px;">
+                        <span>** BEFORE TUMBLE **&nbsp;&nbsp;&nbsp;&nbsp;** AFTER TUMBLE **&nbsp;&nbsp;&nbsp;&nbsp;** CUMULATIVE +1/4&nbsp;&nbsp;&nbsp;&nbsp;COMPRESSION&nbsp;&nbsp;&nbsp;&nbsp;* PELLET *</span>
+                    </div>
+                    <div>*** SPECIFICATIONS ***   062 GRADE FLUX PELLETS</div>
+                    <div>MIN/MAX 17.0&nbsp;&nbsp;&nbsp;&nbsp;4.0&nbsp;97.0&nbsp;95.0&nbsp;400&nbsp;16.3&nbsp;&nbsp;&nbsp;&nbsp;1.08/84.4.87/4.33</div>
+                    <div>MEAN 8.5&nbsp;&nbsp;&nbsp;&nbsp;2.6&nbsp;98.0&nbsp;96.0&nbsp;445&nbsp;4.9&nbsp;&nbsp;&nbsp;&nbsp;0.96&nbsp;4.60</div>
+                    <div style="margin-bottom:10px;">9/16&nbsp;1/2&nbsp;7/16&nbsp;3/8&nbsp;1/4&nbsp;29M&nbsp;28M&nbsp;DIAM&nbsp;3/8&nbsp;**&nbsp;&nbsp;&nbsp;&nbsp;28M&nbsp;28M&nbsp;B.T.&nbsp;A.T.&nbsp;AVG&nbsp;&lt;200&nbsp;DT&nbsp;M00&nbsp;B/A&nbsp;SIO2</div>
+                    <div style="margin-bottom:10px;">
+                        <b>LINE 3</b><br />
+                        1 0.5 9.1 27.4 52.7 8.5 1.4 0.4 0.411 89.2 0.00&nbsp;&nbsp;1.3 2.4 98.2 96.3 504 2.2 0.0 0.320 0.96 4.60<br />
+                        2 0.5 9.4 26.0 54.6 9.1 1.0 0.3 0.413 89.1 0.00&nbsp;&nbsp;1.2 2.5 98.7 96.3 493 3.2 165.1 3.15 0.97 4.48<br />
+                        3 0.9 11.2 27.7 52.0 7.7 1.1 0.4 0.416 90.0 0.00&nbsp;&nbsp;1.1 2.7 98.5 96.2 498 3.4 170.4 3.07 0.98 4.43<br />
+                        4 0.3 9.5 27.1 53.1 8.4 1.2 0.4 0.400 90.0 0.00&nbsp;&nbsp;1.2 2.6 98.5 96.3 498 2.9 0.0 0.314 0.97 4.50
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <b>LINE 4</b><br />
+                        1 0.6 6.9 23.3 57.9 9.9 1.1 0.4 0.408 88.1 0.00&nbsp;&nbsp;1.0 2.4 98.6 96.6 477 3.4 147.0 3.14 0.99 4.48<br />
+                        2 0.2 8.3 26.8 54.8 9.4 0.5 0.1 0.414 89.8 0.00&nbsp;&nbsp;1.1 2.9 99.4 95.9 465 2.6 141.3 3.16 0.97 4.48<br />
+                        3 0.0 6.2 20.0 60.0 9.7 0.0 0.0 0.400 90.0 0.00&nbsp;&nbsp;1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.00 0.00<br />
+                        4 0.4 7.3 24.6 56.6 8.7 0.9 0.3 0.400 90.0 0.00&nbsp;&nbsp;1.2 2.6 98.6 96.4 473 3.1 0.0 0.315 0.98 4.48
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <b>LINE 6</b><br />
+                        1 0.3 7.9 25.1 55.9 9.0 1.3 0.5 0.409 88.9 0.00&nbsp;&nbsp;1.2 2.5 98.6 96.3 447 6.1 172.3 3.05 0.96 4.58<br />
+                        2 0.1 7.1 27.6 54.3 9.0 0.9 0.1 0.410 88.9 0.00&nbsp;&nbsp;1.3 2.8 99.6 95.9 497 6.8 190.3 3.08 0.95 4.53<br />
+                        3 0.6 7.9 28.1 55.1 11.2 1.3 0.2 0.406 89.8 0.00&nbsp;&nbsp;1.2 2.9 98.5 96.1 510 6.2 197.9 3.10 0.93 4.56<br />
+                        4 0.2 7.3 26.2 56.1 9.7 1.2 0.3 0.400 90.0 0.00&nbsp;&nbsp;1.2 2.7 98.6 96.4 483 6.4 0.0 3.05 0.96 4.56
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <b>LINE 12</b><br />
+                        1 0.6 12.1 34.9 44.7 7.2 0.5 0.5 0.407 91.7 0.00&nbsp;&nbsp;1.2 3.1 99.6 96.4 467 4.2 154.7 3.05 0.96 4.61<br />
+                        2 0.1 11.6 34.4 46.2 6.5 0.5 0.5 0.428 92.1 0.00&nbsp;&nbsp;1.2 3.1 99.7 95.7 480 3.1 150.3 3.16 1.02 4.54<br />
+                        3 0.1 10.5 33.4 45.6 7.2 0.5 0.4 0.422 91.0 0.00&nbsp;&nbsp;1.2 3.1 99.5 95.8 474 4.7 190.3 3.07 0.98 4.62<br />
+                        4 0.1 10.6 34.5 43.1 7.2 0.5 0.0 0.400 90.0 0.00&nbsp;&nbsp;1.2 2.7 98.5 96.3 474 4.7 0.0 3.07 0.98 4.62
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <b>LINE 7</b><br />
+                        1 0.3 9.8 27.6 52.2 8.3 0.4 0.417 90.2 0.00&nbsp;&nbsp;1.2 2.9 98.7 96.3 477 4.4 171.5 3.04 0.98 4.60<br />
+                        2 0.6 7.9 23.0 57.0 9.5 1.5 0.5 0.407 87.9 0.00&nbsp;&nbsp;1.0 2.9 98.0 96.0 445 4.2 0.0 3.10 0.98 4.64<br />
+                        3 0.4 9.6 27.9 52.1 8.6 1.0 0.5 0.400 90.0 0.00&nbsp;&nbsp;1.2 2.7 98.6 96.2 471 3.9 0.0 3.10 0.97 4.59
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <b>FILTER CAKE</b><br />
+                        <table style="width:100%; font-family:monospace; font-size:14px; border-collapse:collapse;">
+                            <tr><th>STEP 2</th><th>FILT. CAO</th><th>FLUX</th><th>FINAL</th><th>STEP 3</th><th>FILT. CAO</th><th>FLUX</th><th>FLUX STONE</th></tr>
+                            <tr><td>4.16</td><td>83.57</td><td>60.00</td><td>3.12</td><td>4.16</td><td>83.57</td><td>60.00</td><td>74.60</td></tr>
+                            <tr><td>4.16</td><td>83.57</td><td>60.00</td><td>3.12</td><td>4.16</td><td>83.57</td><td>60.00</td><td>74.60</td></tr>
+                            <tr><td>4.16</td><td>83.57</td><td>60.00</td><td>3.12</td><td>4.16</td><td>83.57</td><td>60.00</td><td>74.60</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </RadzenColumn>
+        </RadzenRow>
+    </ChildContent>
+</RadzenPanel>

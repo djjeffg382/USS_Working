@@ -1,0 +1,63 @@
+@page "/check-comps"
+@inherits CheckCompsPage
+
+<RadzenPanel>
+    <HeaderTemplate>
+        <RadzenText Text="Compression Tester Comparison" TextStyle="TextStyle.H3" />
+    </HeaderTemplate>
+    <ChildContent>
+        <RadzenRow>
+            <RadzenColumn Width="12" Style="text-align:right;">
+                <RadzenButton Text="Export PDF" ButtonStyle="ButtonStyle.Secondary" Click="ExportPdf" />
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Width="12">
+                <div id="checkcomps-report-content" style="font-family:monospace; font-size:14px; margin-top:30px;">
+                    <div style="text-align:center;">
+                        <span>16-MAY-25</span>
+                        <span style="margin-left:80px;">COMPRESSION TESTER COMPARISON</span>
+                        <span style="float:right;">12:36 AM</span>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <table style="width:100%; font-family:monospace; font-size:14px; border-collapse:collapse;">
+                            <tr>
+                                <th style="text-align:left;">TESTER #1</th>
+                                <th></th>
+                                <th style="text-align:left;">TESTER #2</th>
+                                <th></th>
+                                <th style="text-align:left;">TESTER #3</th>
+                            </tr>
+                            <tr>
+                                <td>LINE MEAN %-200</td>
+                                <td></td>
+                                <td>LINE MEAN %-200</td>
+                                <td></td>
+                                <td>LINE MEAN %-200</td>
+                            </tr>
+                            <tr><td>7 443. 2.08</td><td></td><td>7 462. 2.06</td><td></td><td>6 473. 8.00</td></tr>
+                            <tr><td>6 370. 9.09</td><td></td><td>6 413. 4.12</td><td></td><td>5 472. 5.10</td></tr>
+                            <tr><td>6 395. 2.00</td><td></td><td>5 470. 8.33</td><td></td><td>5 475. 3.00</td></tr>
+                            <tr><td>6 431. 10.00</td><td></td><td>5 474. 3.13</td><td></td><td>4 500. 2.00</td></tr>
+                            <tr><td>6 458. 2.04</td><td></td><td>4 441. 3.06</td><td></td><td>3 554. 1.00</td></tr>
+                            <tr><td>5 484. 4.00</td><td></td><td>4 527. 3.13</td><td></td><td>3 563. 1.00</td></tr>
+                            <tr><td>5 504. 4.00</td><td></td><td>3 425. 2.06</td><td></td><td>7 470. 5.05</td></tr>
+                            <tr><td>3 426. 5.00</td><td></td><td>7 462. 3.03</td><td></td><td>7 486. 1.02</td></tr>
+                            <tr><td>7 441. 6.06</td><td></td><td>7 526. 1.03</td><td></td><td>7 516. 0.00</td></tr>
+                            <tr><td>4 500. 2.04</td><td></td><td>5 406. 8.00</td><td></td><td>5 464. 6.25</td></tr>
+                            <tr><td>4 432. 3.09</td><td></td><td>4 461. 6.19</td><td></td><td>5 494. 2.02</td></tr>
+                            <tr><td>4 441. 5.10</td><td></td><td>3 494. 4.12</td><td></td><td>4 503. 3.06</td></tr>
+                            <tr><td>4 483. 5.00</td><td></td><td>6 458. 5.05</td><td></td><td>3 460. 2.04</td></tr>
+                            <tr><td>4 495. 3.00</td><td></td><td>5 490. 3.03</td><td></td><td>7 498. 1.02</td></tr>
+                            <tr><td>6 477. 3.03</td><td></td><td>5 492. 6.12</td><td></td><td>6 482. 1.02</td></tr>
+                            <tr><td>5 533. 4.04</td><td></td><td>4 476. 1.02</td><td></td><td>3 500. 4.17</td></tr>
+                            <tr>
+                                <td>AVG. 453.3 4.82</td><td></td><td>AVG. 467.9 3.94</td><td></td><td>AVG. 486.4 3.45</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </RadzenColumn>
+        </RadzenRow>
+    </ChildContent>
+</RadzenPanel>

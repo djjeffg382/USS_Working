@@ -1,0 +1,49 @@
+@page "/filter-cakes"
+@inherits FilterCakesPage
+
+<RadzenCard Variant="Variant.Outlined" Style="max-width:900px;margin:auto;background:black;color:white;">
+    <div style="font-family:monospace; font-size:2rem; text-align:center; letter-spacing:0.2em; margin-top:10px;">FILTER CAKE ANALYSIS</div>
+    <div style="font-family:monospace; font-size:1.5rem; text-align:center; margin-bottom:30px; display:flex; justify-content:center; align-items:center;">
+        <span>STEP</span>
+        <RadzenDropDown @bind-Value="Step" Data="Steps" Style="width:180px; height:48px; line-height:48px; margin-left:10px; font-size:1.5rem; text-align:center;" />
+    </div>
+    <div style="font-family:monospace; font-size:1.2rem; text-align:center; margin-bottom:20px;">
+        <span style="margin-right:20px;">SAMPLE DATE</span>
+        <RadzenButton Text=@($"{SelectedDate:dd-MMM-yy}") Click="ShowDateDialog" Style="background:#222;color:#fff;border:1px solid #888;min-width:120px;" />
+        <span style="margin-left:40px; margin-right:20px;">SAMPLE TIME</span>
+        <RadzenTextBox @bind-Value="SampleTime" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right;" />
+    </div>
+    <div style="display:flex; justify-content:center; gap:80px; margin-bottom:30px;">
+        <div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:70px;">SIO2</span>
+                <RadzenTextBox @bind-Value="SIO2" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:70px;">AL203</span>
+                <RadzenTextBox @bind-Value="AL203" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:70px;">CAO</span>
+                <RadzenTextBox @bind-Value="CAO" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:70px;">MGO</span>
+                <RadzenTextBox @bind-Value="MGO" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+        </div>
+        <div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:110px;">BASICITY=</span>
+                <RadzenTextBox @bind-Value="Basicity" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+            <div style="display:flex; align-items:center; margin-bottom:10px;">
+                <span style="width:110px;">EST. RATIO=</span>
+                <RadzenTextBox @bind-Value="EstRatio" Style="width:80px;background:#222;color:#fff;border:1px solid #888;text-align:right; margin-left:auto;" />
+            </div>
+        </div>
+    </div>
+    <div style="font-family:monospace; font-size:1.2rem; text-align:center; margin-bottom:30px;">
+        <RadzenButton Text="Submit Values" ButtonStyle="ButtonStyle.Primary" Click="SubmitValues" Style="width:180px;" />
+    </div>
+</RadzenCard>

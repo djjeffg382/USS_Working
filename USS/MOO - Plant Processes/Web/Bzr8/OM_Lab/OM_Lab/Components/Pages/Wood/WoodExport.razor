@@ -1,0 +1,46 @@
+﻿@page "/wood_woodexport"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+
+@inject NavigationManager NavManager
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Wood Shipments Export</PageTitle>
+<SectionContent SectionName="page-title">Wood Shipments Export</SectionContent>
+
+
+
+<RadzenCard class="m-3">
+    <div class="col-12">
+        <div class="row mb-2">
+            <h6>Start Date:</h6>
+            <RadzenDatePicker @bind-Value=@StartDate DateFormat="d" Style="width:150px" />
+        </div>
+        <div class="row mb-2">
+            <h6>End Date:</h6>
+            <RadzenDatePicker @bind-Value=@EndDate DateFormat="d" Style="width:150px" />
+        </div>
+        
+        <div class="row mb-2">
+            <RadzenButton Text="Export" Click="ExportBtnClick" Style="width:150px" />
+        </div>
+    </div>
+
+
+</RadzenCard>
+
+
+
+@code {
+    private DateTime StartDate = DateTime.Today.AddDays(-7);
+    private DateTime EndDate = DateTime.Today;
+
+    private void ExportBtnClick()
+    {
+        NavManager.NavigateTo($"api/WoodShipmentExport/{StartDate:MMM-dd-yyy}/{EndDate:MMM-dd-yyy}", forceLoad: true);
+    }
+}

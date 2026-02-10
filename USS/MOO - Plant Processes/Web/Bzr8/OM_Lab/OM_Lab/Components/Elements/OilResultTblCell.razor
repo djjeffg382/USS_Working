@@ -1,0 +1,101 @@
+﻿@inject Radzen.DialogService DialogSvc
+@using LIMS = MOO.DAL.LIMS
+@using System.Reflection
+<style type="text/css">
+    .OOS_Samp {
+    color: red;
+    }
+
+</style>
+<span class='@(ValOOS.GetValueOrDefault(false)?"OOS_Samp":"")' title=@LimitString onclick="@(async () => await ClickValueAsync())">@ResultValue</span>
+
+@code {
+    //This is used on the LIMS/Oil_Results.razor form
+
+    [Parameter] public LIMS.Models.OilResults Sample { get; set; } = new();
+    [Parameter] public string Component { get; set; } = "";
+    public double? ResultValue { get; set; }
+    public double? MinValue { get; set; }
+    public double? MaxValue { get; set; }
+    public bool? ValOOS { get; set; }
+
+    private string CompName = "";
+
+
+    protected override void OnInitialized()
+    {
+        switch(Component)
+        {
+            case "Oxidation":
+                CompName = "Oxidation (A/cm)";
+                break;
+            case "Soot_1980":
+                CompName = "Soot 1980 (A/cm)";
+                break;
+            case "Soot_3800":
+                CompName = "Soot 3800 (A/cm)";
+                break;
+            case "Glycol":
+                CompName = "Glycol (%)";
+                break;
+            case "Water":
+                CompName = "Water (%)";
+                break;
+            case "PQ":
+                CompName = "PQ Value";
+                break;
+            case "Glycol_GC":
+                CompName = "Glycol GC";
+                break;
+            default:
+                CompName = Component;
+                break;
+        }
+
+
+        Type myType = typeof(LIMS.Models.OilResults);
+        PropertyInfo prop = myType.GetProperty($"{Component}_oos", BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance)!;
+        ValOOS = (bool?)prop.GetValue(Sample);
+
+        prop = myType.GetProperty($"{Component}_min", BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance)!;
+        MinValue = (double?)prop.GetValue(Sample);
+
+        prop = myType.GetProperty($"{Component}_max", BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance)!;
+        MinValue = (double?)prop.GetValue(Sample);
+
+        prop = myType.GetProperty(Component, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance)!;
+        ResultValue = (double?)prop.GetValue(Sample);
+
+        base.OnInitialized();
+    }
+
+
+    private string LimitString
+    {
+        get
+        {
+            //only show limit if Out Of spec
+            if (ValOOS.GetValueOrDefault(false))
+            {
+                if (MinValue.HasValue && MaxValue.HasValue)
+                    return MinValue.Value + " - " + MaxValue.Value;
+                else if (MinValue.HasValue)
+                    return "<" + MinValue.Value;
+                else if (MaxValue.HasValue)
+                    return ">" + MaxValue.Value;
+                else return "";
+            }
+            else
+                return "";
+
+        }
+    }
+    private async Task ClickValueAsync()
+    {
+        await DialogSvc.OpenAsync<Dialogs.PrevLIMSResult>("Sample History",
+                   new Dictionary<string, object>() { { "SampleId", Sample.Sample_Nbr }, { "Component", CompName }, { "SamplePoint", Sample.SamplePoint } },
+                   new DialogOptions() { Width = "800px", Height = "500px", Resizable = false, Draggable = true });
+    }
+
+
+}

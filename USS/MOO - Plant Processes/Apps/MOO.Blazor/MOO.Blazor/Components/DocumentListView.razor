@@ -1,0 +1,190 @@
+﻿@using System.IO
+@using System.Text
+@using System.Data
+@using Microsoft.JSInterop
+@inject NavigationManager NavManager
+@inject ContextMenuService ContextMenuService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime;
+
+<div @oncontextmenu=@(args => ShowRightClickMenu(args)) @oncontextmenu:preventDefault="true">
+    <RadzenTree Data=@Tree_Item_List Change=@OnClickAsync Expand=@LoadFiles @bind-Value=@selectedNode Style=@Style >
+        <RadzenTreeLevel TextProperty="Text" Template="FileOrFolderTemplate" HasChildren="item => ((TreeItem)item).IsDirectory" />
+    </RadzenTree>
+</div>
+
+
+
+@code {
+    /*SUMMARY: In order to use this. You must make Virtual Director on the Web server that points to the folder location.  You will then use this Virtual Directory URL as the URLRoot Parameter
+     *  This program will get the list of files through the FileFolderLocation and then present it as a URL.
+    * */
+
+
+    /// <summary>
+    /// The Folder location of the files to show
+    /// </summary>
+    [Parameter]
+    public string FileFolderLocation { get; set; } = "";
+
+
+    /// <summary>
+    /// The root URL that points to the file location
+    /// </summary>
+    [Parameter]
+    public string URLRoot { get; set; } = "";
+
+    [Parameter]
+    public string Style { get; set; } = "";
+
+    /// <summary>
+    /// Whether to show a right click information menu that tells where the folder location is shown
+    /// </summary>
+    [Parameter]
+    public bool ShowInfoMenu { get; set; } = true;
+
+    object? selectedNode;
+    IEnumerable<TreeItem>? Tree_Item_List;
+
+    private class TreeItem
+    {
+        public string Text { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string URL { get; set; } = "";
+        public bool IsDirectory { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        Tree_Item_List = ReturnTreeItemsAsList(FileFolderLocation, URLRoot);
+    }
+
+    List<TreeItem> ReturnTreeItemsAsList(string location, string urlRoot)
+    {
+        List<TreeItem>? Tree_List = new List<TreeItem>();
+        DirectoryInfo di = new(location);
+        Tree_List.Clear();
+        foreach (var folder in di.GetDirectories())
+        {
+            TreeItem ti = new()
+                {
+                    Text = folder.Name,
+                    Location = folder.FullName,
+                    URL = urlRoot + location,
+                    IsDirectory = true
+                };
+            Tree_List!.Add(ti);
+        }
+        foreach (var file in di.GetFiles().Where(name => !name.FullName.Contains("Thumbs") && !name.FullName.Contains("~$") && !name.FullName.Contains(".lnk")).OrderBy(x => x.Name))
+        {
+            TreeItem ti = new()
+                {
+                    Text = file.Name,
+                    Location = file.FullName!,
+                    URL = file.FullName.Replace($"{FileFolderLocation}", $"{URLRoot}"),
+                    IsDirectory = false
+                };
+            Tree_List!.Add(ti);
+        }
+        return Tree_List;
+    }
+
+    void LoadFiles(TreeExpandEventArgs args)
+    {
+        TreeItem? node = args.Value as TreeItem;
+
+        args.Children.Data = ReturnTreeItemsAsList(node!.Location, node.URL);
+        args.Children.Template = FileOrFolderTemplate;
+        args.Children.TextProperty = "Text";
+        args.Children.HasChildren = item => ((TreeItem)item).IsDirectory;
+    }
+
+    async Task OnClickAsync()
+    {
+        if (selectedNode is TreeItem selected)
+        {
+            selectedNode = selected;
+            if (selected.IsDirectory == false)
+            {
+                string TranslatedURL = selected.URL.Replace(" ", "%20").Replace("\\", "/");
+                //NavManager.NavigateTo(TranslatedURL);
+                await JSRuntime.InvokeAsync<object>("open", TranslatedURL, "_blank");
+            }
+        }
+    }
+
+    RenderFragment<RadzenTreeItem> FileOrFolderTemplate = (context) => builder =>
+    {
+        TreeItem? node = context.Value as TreeItem;
+        bool isDirectory = node!.IsDirectory;
+
+        if (node.IsDirectory)
+        {
+            builder.OpenComponent<RadzenIcon>(0);
+            builder.AddAttribute(1, nameof(RadzenIcon.Icon), "folder");
+            builder.CloseComponent();
+        }
+        else
+        {
+            //this is a file
+            //see if we can put correct icons for file types
+            string iconLoc = MOO.Settings.ServerType == MOO.Settings.ServerClass.Production ? "/Images/Icons/" : "http://www.mno.uss.com/Images/Icons/";
+            string fileType = node.Location.Substring(node.Location.Length - 4).ToLower();
+
+
+
+            if (fileType.Contains("xls"))
+            {
+                builder.OpenComponent<RadzenImage>(1);
+                builder.AddAttribute(1, nameof(RadzenImage.Path), $"{iconLoc}excel.png");
+                builder.CloseComponent();
+            }
+            else if (fileType.Contains("pdf"))
+            {
+                builder.OpenComponent<RadzenImage>(0);
+                builder.AddAttribute(1, nameof(RadzenImage.Path), $"{iconLoc}pdf.png");
+                builder.CloseComponent();
+            }
+            else if (fileType.Contains("ppt"))
+            {
+                builder.OpenComponent<RadzenImage>(0);
+                builder.AddAttribute(1, nameof(RadzenImage.Path), $"{iconLoc}ppt.png");
+                builder.CloseComponent();
+            }
+            else if (fileType.Contains("doc"))
+            {
+                builder.OpenComponent<RadzenImage>(0);
+                builder.AddAttribute(1, nameof(RadzenImage.Path), $"{iconLoc}word.png");
+                builder.CloseComponent();
+            }
+            else
+            {
+                builder.OpenComponent<RadzenIcon>(0);
+                builder.AddAttribute(1, nameof(RadzenIcon.Icon), "insert_drive_file");
+                builder.CloseComponent();
+            }
+        }
+
+        builder.AddContent(3, context.Text);
+    };
+
+
+
+
+    void ShowRightClickMenu(MouseEventArgs args)
+    {
+        ContextMenuService.Open(args,
+            new List<ContextMenuItem> {
+                new ContextMenuItem(){ Text = "Information", Value = 1, Icon = "info" }
+             }, OnMenuItemClick);
+    }
+    void OnMenuItemClick(MenuItemEventArgs args)
+    {
+        if (args.Value.Equals(1) )
+            DialogService.Alert($"This is showing documents from the location {FileFolderLocation}.  To add or remove documents go to this location.  If you do not have access to modify this location and need access please email IT_PP_Systems_MNOre@uss.com.", "Information");
+    }
+
+
+
+
+}

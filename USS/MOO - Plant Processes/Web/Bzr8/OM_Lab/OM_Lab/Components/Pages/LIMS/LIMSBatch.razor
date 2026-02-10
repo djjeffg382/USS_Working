@@ -1,0 +1,125 @@
+﻿@page "/lims_limsbatch"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using System.Net;
+@using ToLive = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,M_LAB_MGR,M_LAB_AN")]
+
+@inject Radzen.DialogService DialogSvc
+@inject IJSRuntime JSRunTime
+
+
+<PageTitle>@Util.PROGRAM_TITLE - LIMS Batch Samples</PageTitle>
+<SectionContent SectionName="page-title">LIMS Batch Samples</SectionContent>
+
+<RadzenCard style="min-width:1500px">
+    <div class="row mb-2">
+        <div class="col">
+            <RadzenButton Click="AddBtnClickedAsync" Icon="add" ButtonStyle="ButtonStyle.Light" title="Add Batch" />
+            <RadzenButton Click="EditBtnClickedAsync" Icon="edit" ButtonStyle="ButtonStyle.Light" title="Edit Batch" />
+            <RadzenButton Click="SampleBatchListRprt" Icon="summarize" ButtonStyle="ButtonStyle.Light" title="Batch Sample Report" />
+            <RadzenButton Click="RefreshGrid" Icon="refresh" ButtonStyle="ButtonStyle.Light" title="Refresh Grid"/>
+        </div>
+    </div>
+
+
+
+    <RadzenDataGrid AllowFiltering="true" AllowSorting="true" Data="@BatchList" FilterMode="FilterMode.Simple"
+                    TItem="ToLive.Models.LIMS_Batch" style="height:600px" IsLoading="DataIsLoading"
+                    AllowVirtualization="true" @bind-Value="SelectedBatch" @ref="RadGrid"
+                    Settings="GridSettings" AllowColumnResize="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="ToLive.Models.LIMS_Batch" Property="Batch_Id" Title="ID" Width="70px" SortOrder="SortOrder.Descending"/>
+            <RadzenDataGridColumn TItem="ToLive.Models.LIMS_Batch" Property="Batch_Name" Title="Name" Width="150px" />
+            <RadzenDataGridColumn TItem="ToLive.Models.LIMS_Batch" Property="Batch_Type" Title="Batch Type" Width="150px" />
+            <RadzenDataGridColumn TItem="ToLive.Models.LIMS_Batch" Property="Last_Edit_Date" Title="Last Edit" FormatString="{0:MM/dd/yy HH:mm}" Width="75px" />
+            <RadzenDataGridColumn TItem="ToLive.Models.LIMS_Batch" Property="Last_Instrument_Export" Title="Last Export" FormatString="{0:MM/dd/yy HH:mm}" Width="75px" />
+
+
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+@code {
+    private RadzenDataGrid<ToLive.Models.LIMS_Batch>? RadGrid;
+    private List<ToLive.Models.LIMS_Batch> BatchList = new();
+    private IList<ToLive.Models.LIMS_Batch> SelectedBatch = new List<ToLive.Models.LIMS_Batch>();
+    private bool DataIsLoading = false;
+    DataGridSettings? GridSettings;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            await LoadGrid();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGrid()
+    {
+        DataIsLoading = true;
+        BatchList = await Task.Run(() => ToLive.Services.LIMS_BatchSvc.GetAll().FindAll(x => !string.IsNullOrEmpty(x.Batch_Name)).OrderByDescending(x => x.Batch_Id).ToList());
+        DataIsLoading = false;
+    }
+
+
+    private async Task EditBtnClickedAsync()
+    {
+        if (SelectedBatch.Count >= 1)
+        {
+            await DialogSvc.OpenAsync<Dialogs.AddEditLimsBatch>("Update Batch",
+                   new Dictionary<string, object>() { { "Batch", SelectedBatch[0] }},
+                   new DialogOptions() { Width = "1200px", Height = "800px", Resizable = false, Draggable = true });
+
+            await RefreshGrid();
+        }
+
+    }
+
+    private async Task AddBtnClickedAsync()
+    {
+
+        ToLive.Models.LIMS_Batch btch = new();
+
+        await DialogSvc.OpenAsync<Dialogs.AddEditLimsBatch>("Create Batch",
+               new Dictionary<string, object>() { { "Batch", btch } },
+               new DialogOptions() { Width = "1200px", Height = "800px", Resizable = false, Draggable = true });
+
+        await RefreshGrid();
+
+    }
+
+    private async Task RefreshGrid()
+    {
+        //get selected item before refreshing
+        int selected = -1;
+        if (SelectedBatch.Count > 0)
+            selected = SelectedBatch[0].Batch_Id;
+
+        await LoadGrid();
+
+        //data is refreshed now lets select the same row that was selected prior to refresh
+        if (selected > 0)
+        {
+            var selectRow = BatchList.FirstOrDefault(x => x.Batch_Id == selected);
+            if(selectRow != null)
+                await RadGrid!.SelectRow(selectRow);
+        }
+
+    }
+    private async Task SampleBatchListRprt()
+    {
+        if (SelectedBatch.Count > 0)
+        {
+            string url = $"api/BatchSampleRpt/{SelectedBatch[0].Batch_Id}";
+            await JSRunTime.InvokeVoidAsync("open", url, "_blank");
+        }
+
+    }
+
+}

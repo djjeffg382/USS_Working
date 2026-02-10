@@ -1,0 +1,40 @@
+﻿@page "/"
+@page "/index"
+@rendermode InteractiveServer
+
+<PageTitle>@Util.PROGRAM_TITLE - Home</PageTitle>
+
+Welcome to the Minntac/Keetac Ore Movement/Lab portal application.
+<br />
+Please email <a href="mailto:IT_PP_Systems_MNOre@uss.com">IT_PP_Systems_MNOre@uss.com</a> with any questions/comments or issues.
+
+
+<RadzenPanel AllowCollapse="true" Style="margin: 40px auto;" Collapsed="true">
+    <HeaderTemplate>
+        <h3>Access to this system</h3>
+    </HeaderTemplate>
+
+    <ChildContent>
+        <p>
+            Some items in this system are only available to certain roles.
+            <ul>
+                <li>
+                    <strong>Met Data Input/Lab Data Entry/Wood Shipments</strong> <br />To get access to this, please enter a request <a href="/bzr/MOO_General/sec-request">here</a>.&nbsp;
+                    Select "Other Web Applications" and request access to one of the following depending on your position:
+                    <ul>
+                        <li>M_OM_MET - Minntac Ore Movement Met Clerk</li>
+                        <li>M_OM_MGR - Minntac Ore Movement Manager</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>LIMS Batch Editing</strong> <br />To get access to this, please enter a request <a href="/bzr/MOO_General/sec-request">here</a>.&nbsp;
+                    Select "Other Web Applications" and request access to one of the following depending on your position:
+                    <ul>
+                        <li>M_LAB_MGR - Minntac Lab Manager</li>
+                        <li>M_LAB_AN - Minntac Lab Analyst</li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+    </ChildContent>
+</RadzenPanel>

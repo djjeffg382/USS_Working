@@ -1,0 +1,573 @@
+﻿@page "/met_ftg_calc"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using System.Text
+@using System.Data
+
+<style type="text/css">
+    .SubCalculation {
+        border: 1px solid black;
+    }
+
+    .VariableTable {
+        border-width: 1px;
+        border-style: solid;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+
+        .VariableTable th, .VariableTable td {
+            border-width: 1px;
+            border-style: solid;
+        }
+
+        .VariableTable thead {
+            background-color: #507cd1;
+            color: White;
+            border-color: Black
+        }
+
+    .CaclulationHeader {
+        background-color: #3AC100;
+        font-weight: bold;
+    }
+</style>
+
+<PageTitle>@Util.PROGRAM_TITLE - Feed To Grate Calculator</PageTitle>
+<SectionContent SectionName="page-title">Feed To Grate Calculator</SectionContent>
+
+
+
+<RadzenCard class="m-3">
+    <div class="row">
+        <div class="col-2">
+            <h6>Date:</h6>
+            <RadzenDatePicker @bind-Value=@SelectedDate DateRender=@DateRender DateFormat="d" Required="true" Change=LoadData />
+        </div>
+        <div class="col-2">
+            <h6>Material:</h6>
+            <RadzenDropDown AllowClear="false" TValue="DAL.Models.Met_Material" @bind-Value="SelectedMaterial"
+                            Data="@(Enum.GetValues(typeof(DAL.Models.Met_Material)))" Change=LoadData />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <span style="font-weight:bold">Total Feed To Grate = </span> @((FeedToGrateVal[0] + FeedToGrateVal[1]).ToString("N2")) <br />
+
+            <span style="font-weight:bold">Total Conc To Agglom = </span> @((ConcToAgglomVal[0] + ConcToAgglomVal[1]).ToString("N2")) <br />
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+
+<RadzenCard class="m-3">
+    <div class="w-100"><h1>Agglomerator Step 2</h1></div>
+    <div class="row">
+        <div class="col-4" style="border:1px solid black">
+            <div><h3>Current Agg Inventory</h3></div>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reclaim Balance West</td>
+                        <td>recl_bal_w</td>
+                        <td>@Agg2CurrMonth.Recl_Bal_W.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Reclaim Balance East </td>
+                        <td>recl_bal_e</td>
+                        <td>@Agg2CurrMonth.Recl_Bal_E.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Trucked Reclaim Balance</td>
+                        <td>trucked_recl_bal</td>
+                        <td>@Agg2CurrMonth.Trucked_Recl_Bal.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 1</td>
+                        <td>bin1</td>
+                        <td>@Agg2CurrMonth.Bin1.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 2</td>
+                        <td>bin2</td>
+                        <td>@Agg2CurrMonth.Bin2.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 3</td>
+                        <td>bin3</td>
+                        <td>@Agg2CurrMonth.Bin3.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 4</td>
+                        <td>bin4</td>
+                        <td>@Agg2CurrMonth.Bin4.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 5</td>
+                        <td>bin5</td>
+                        <td>@Agg2CurrMonth.Bin5.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 3</td>
+                        <td>tank3</td>
+                        <td>@Agg2CurrMonth.Tank3.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 4</td>
+                        <td>tank4</td>
+                        <td>@Agg2CurrMonth.Tank4.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From West</td>
+                        <td>truck_from_west</td>
+                        <td>@Agg2CurrMonth.Truck_From_West.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From East</td>
+                        <td>truck_from_east</td>
+                        <td>@Agg2CurrMonth.Truck_From_East.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Group 13 Fines</td>
+                        <td>grp13_fines</td>
+                        <td>@Agg2CurrMonth.Grp13_Fines.GetValueOrDefault(0)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Inventory Calculation</div>
+            Inventory =
+            <div style='margin-left:20px'>
+                @if (SelectedDate < FTGInvChangeoverDate)
+                {
+                    <div>
+                        recl_bal_w + recl_bal_e - <br />
+                        trucked_recl_bal + (bin3 / 100 * 5400) + <br />
+                        ((bin4 + bin5) / 200 * 4500) + <br />
+                        (tank3 + tank4) * 108
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        recl_bal_w + recl_bal_e - trucked_recl_bal + <br />
+                        ((0.97993 * (bin1/100)<sup>2</sup> + 0.00077 * (bin1/100) + 0.00987) * 900) + <br />
+                        ((0.97993 * (bin2/100)<sup>2</sup> + 0.00077 * (bin2/100) + 0.00987) * 1800) + <br />
+                        ((0.97993 * (bin3/100)<sup>2</sup> + 0.00077 * (bin3/100) + 0.00987) * 1800) + <br />
+                        ((0.97993 * (bin4/100)<sup>2</sup> + 0.00077 * (bin4/100) + 0.00987) * 2250) + <br />
+                        ((0.97993 * (bin5/100)<sup>2</sup> + 0.00077 * (bin5/100) + 0.00987) * 2250) + <br />
+                        (tank3 + tank4) * 108
+                    </div>
+                }
+
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Inventory</span> = @Agg2CurrMonth.Inventory.ToString("N2")
+
+        </div>
+        <div class="col-4" style="border:1px solid black">
+            <div><h3>Previous Month Agg Inventory</h3></div>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reclaim Balance West</td>
+                        <td>recl_bal_w</td>
+                        <td>@Agg2PrevMonth.Recl_Bal_W</td>
+                    </tr>
+                    <tr>
+                        <td>Reclaim Balance East </td>
+                        <td>recl_bal_e</td>
+                        <td>@Agg2PrevMonth.Recl_Bal_E</td>
+                    </tr>
+                    <tr>
+                        <td>Trucked Reclaim Balance</td>
+                        <td>trucked_recl_bal</td>
+                        <td>@Agg2PrevMonth.Trucked_Recl_Bal</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 1</td>
+                        <td>bin1</td>
+                        <td>@Agg2PrevMonth.Bin1</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 2</td>
+                        <td>bin2</td>
+                        <td>@Agg2PrevMonth.Bin2</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 3</td>
+                        <td>bin3</td>
+                        <td>@Agg2PrevMonth.Bin3</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 4</td>
+                        <td>bin4</td>
+                        <td>@Agg2PrevMonth.Bin4</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 5</td>
+                        <td>bin5</td>
+                        <td>@Agg2PrevMonth.Bin5</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 3</td>
+                        <td>tank3</td>
+                        <td>@Agg2PrevMonth.Tank3</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 4</td>
+                        <td>tank4</td>
+                        <td>@Agg2PrevMonth.Tank4</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From West</td>
+                        <td>truck_from_west</td>
+                        <td>@Agg2PrevMonth.Truck_From_West</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From East</td>
+                        <td>truck_from_east</td>
+                        <td>@Agg2PrevMonth.Truck_From_East</td>
+                    </tr>
+                    <tr>
+                        <td>Group 13 Fines</td>
+                        <td>grp13_fines</td>
+                        <td>@Agg2PrevMonth.Grp13_Fines</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Inventory Calculation</div>
+            Inventory =
+
+            <div style='margin-left:20px'>
+                @if (SelectedDate.AddMonths(-1) < FTGInvChangeoverDate)
+                {
+                    <div>
+                        recl_bal_w + recl_bal_e - <br />
+                        trucked_recl_bal + (bin3 / 100 * 5400) + <br />
+                        ((bin4 + bin5) / 200 * 4500) + <br />
+                        (tank3 + tank4) * 108
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        recl_bal_w + recl_bal_e - trucked_recl_bal + <br />
+                        ((0.97993 * (bin1/100)<sup>2</sup> + 0.00077 * (bin1/100) + 0.00987) * 900) + <br />
+                        ((0.97993 * (bin2/100)<sup>2</sup> + 0.00077 * (bin2/100) + 0.00987) * 1800) + <br />
+                        ((0.97993 * (bin3/100)<sup>2</sup> + 0.00077 * (bin3/100) + 0.00987) * 1800) + <br />
+                        ((0.97993 * (bin4/100)<sup>2</sup> + 0.00077 * (bin4/100) + 0.00987) * 2250) + <br />
+                        ((0.97993 * (bin5/100)<sup>2</sup> + 0.00077 * (bin5/100) + 0.00987) * 2250) + <br />
+                        (tank3 + tank4) * 108
+                    </div>
+                }
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Inventory</span> = @Agg2PrevMonth.Inventory.ToString("N2")
+        </div>
+        <div class="col-4" style="border:1px solid black">
+
+            <h3>Feed To Grate Agg2 Calculation</h3>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Material Factor</td>
+                        <td>material_factor</td>
+                        <td>@MatFactorVal[0]</td>
+                    </tr>
+                    <tr>
+                        <td>Train Moisture</td>
+                        <td>train_h2o</td>
+                        <td>@TrainAnalysisVal[0]</td>
+                    </tr>
+                    <tr>
+                        <td>Line 3 Pellet Tons</td>
+                        <td>L3_PTons</td>
+                        <td>@PelTons[0].ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>Line 4 Pellet Tons</td>
+                        <td>L4_PTons</td>
+                        <td>@PelTons[1].ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>Line 5 Pellet Tons</td>
+                        <td>L5_PTons</td>
+                        <td>@PelTons[2].ToString("N2")</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Feed To Grate Calculation</div>
+            Feed To Grate =  <div style='margin-left:40px'>(L3_PTons + L4_PTons + L5PTons)/(material_factor/(100-train_h20))</div> <br />
+            <br />
+            <span style='font-weight:bold'>Feed To Grate = </span>@FeedToGrateVal[0].ToString("N2")<br />
+            <br /><br />
+            <div class='CaclulationHeader'>Conc To Agglom Calculation</div>
+            Conc To Agglom =  <div style='margin-left:40px'>
+                Feed_To_Grate + (Current_Month_Inventory - Last_Month_Inventory) + <br />
+                (Current_Month_Truck_From_West + Current_Month_Truck_From_East + Group_13_Fines)
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Conc To Agglom = </span>@ConcToAgglomVal[0].ToString("N2")
+
+        </div>
+    </div>
+</RadzenCard>
+
+
+
+<RadzenCard class="m-3">
+    <div class="w-100"><h1>Agglomerator Step 3</h1></div>
+    <div class="row">
+        <div class="col-4" style="border:1px solid black">
+            <div><h3>Current Agg Inventory</h3></div>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reclaim Balance West</td>
+                        <td>recl_bal_w</td>
+                        <td>@Agg3CurrMonth.Recl_Bal_W.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Trucked Reclaim Balance </td>
+                        <td>trucked_recl_bal</td>
+                        <td>@Agg3CurrMonth.Trucked_Recl_Bal.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 6</td>
+                        <td>bin6</td>
+                        <td>@Agg3CurrMonth.Bin6.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 7</td>
+                        <td>bin7</td>
+                        <td>@Agg3CurrMonth.Bin7.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 6</td>
+                        <td>tank6</td>
+                        <td>@Agg3CurrMonth.Tank6.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 7</td>
+                        <td>tank7</td>
+                        <td>@Agg3CurrMonth.Tank7.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From West</td>
+                        <td>truck_from_west</td>
+                        <td>@Agg3CurrMonth.Truck_From_West.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From East</td>
+                        <td>truck_from_east</td>
+                        <td>@Agg3CurrMonth.Truck_From_East.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck To West</td>
+                        <td>truck_to_west</td>
+                        <td>@Agg3CurrMonth.Truck_To_West.GetValueOrDefault(0)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Inventory Calculation</div>
+            Inventory =
+            <div style='margin-left:20px'>
+
+                @if (SelectedDate < FTGInvChangeoverDate)
+                {
+                    <div>
+                        recl_bal_w - trucked_recl_bal + <br />
+                        ((bin6 + bin7)/200*4500) + <br />
+                        (tank6 + tank7) * 108
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        recl_bal_w - trucked_recl_bal + <br />
+                        ((0.97993 * (bin6/100)<sup>2</sup> + 0.00077 * (bin6/100) + 0.00987) * 2250) + <br />
+                        ((0.97993 * (bin7/100)<sup>2</sup> + 0.00077 * (bin7/100) + 0.00987) * 2250) + <br />
+                        (tank6 + tank7) * 108
+                    </div>
+                }
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Inventory</span> = @Agg3CurrMonth.Inventory.ToString("N2")
+
+        </div>
+        <div class="col-4" style="border:1px solid black">
+            <div><h3>Previous Month Agg Inventory</h3></div>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reclaim Balance West</td>
+                        <td>recl_bal_w</td>
+                        <td>@Agg3PrevMonth.Recl_Bal_W</td>
+                    </tr>
+                    <tr>
+                        <td>Trucked Reclaim Balance</td>
+                        <td>trucked_recl_bal</td>
+                        <td>@Agg3PrevMonth.Trucked_Recl_Bal</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 6</td>
+                        <td>bin6</td>
+                        <td>@Agg3PrevMonth.Bin6.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Bin 7</td>
+                        <td>bin7</td>
+                        <td>@Agg3PrevMonth.Bin7.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 6</td>
+                        <td>tank6</td>
+                        <td>@Agg3PrevMonth.Tank6.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Tank 7</td>
+                        <td>tank7</td>
+                        <td>@Agg3PrevMonth.Tank7.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From West</td>
+                        <td>truck_from_west</td>
+                        <td>@Agg3PrevMonth.Truck_From_West.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck From East</td>
+                        <td>truck_from_east</td>
+                        <td>@Agg3PrevMonth.Truck_From_East.GetValueOrDefault(0)</td>
+                    </tr>
+                    <tr>
+                        <td>Truck To West</td>
+                        <td>truck_to_west</td>
+                        <td>@Agg3PrevMonth.Truck_To_West.GetValueOrDefault(0)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Inventory Calculation</div>
+            Inventory =
+            <div style='margin-left:20px'>
+                @if (SelectedDate.AddMonths(-1) < FTGInvChangeoverDate)
+                {
+                    <div>
+                        recl_bal_w - trucked_recl_bal + <br />
+                        ((bin6 + bin7)/200*4500) + <br />
+                        (tank6 + tank7) * 108
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        recl_bal_w - trucked_recl_bal + <br />
+                        ((0.97993 * (bin6/100)<sup>2</sup> + 0.00077 * (bin6/100) + 0.00987) * 2250) + <br />
+                        ((0.97993 * (bin7/100)<sup>2</sup> + 0.00077 * (bin7/100) + 0.00987) * 2250) + <br />
+                        (tank6 + tank7) * 108
+                    </div>
+                }
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Inventory</span> = @Agg3PrevMonth.Inventory.ToString("N2")
+        </div>
+        <div class="col-4" style="border:1px solid black">
+            <h3>Feed To Grate Agg3 Calculation</h3>
+            <table class='VariableTable'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Variable Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Material Factor</td>
+                        <td>material_factor</td>
+                        <td>@MatFactorVal[1]</td>
+                    </tr>
+                    <tr>
+                        <td>Train Moisture</td>
+                        <td>train_h2o</td>
+                        <td>@TrainAnalysisVal[1]</td>
+                    </tr>
+                    <tr>
+                        <td>Line 6 Pellet Tons</td>
+                        <td>L6_PTons</td>
+                        <td>@PelTons[3].ToString("N2")</td>
+                    </tr>
+                    <tr>
+                        <td>Line 7 Pellet Tons</td>
+                        <td>L7_PTons</td>
+                        <td>@PelTons[4].ToString("N2")</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class='CaclulationHeader'>Trucked Into Plant</div>
+            Trucked Into Plant =  <div style='margin-left:40px'>Current_Month_Truck_To_West + Previous_Month_Trucked_Recl_Bal - Current_Month_Trucked_Recl_Bal</div> <br />
+            <br />
+            <span style='font-weight:bold'>Trucked To Plant = </span>@Agg3TotalTrucked.ToString("N2")<br />
+            <br /><br />
+
+
+            <div class='CaclulationHeader'>Feed To Grate Calculation</div>
+            Feed To Grate =  <div style='margin-left:40px'>(L6_PTons + L7_PTons)/(material_factor/(100-train_h20))</div> <br />
+            <br />
+            <span style='font-weight:bold'>Feed To Grate = </span>@FeedToGrateVal[1].ToString("N2")<br />
+            <br /><br />
+            <div class='CaclulationHeader'>Conc To Agglom Calculation</div>
+            Conc To Agglom =  <div style='margin-left:40px'>
+                Feed_To_Grate + (Current_Month_Inventory - Last_Month_Inventory) + <br />
+                (Current_Month_Truck_From_West + Current_Month_Truck_From_East) - Total_Trucked_Into_Plant
+            </div>
+            <br /><br />
+            <span style='font-weight:bold'>Conc To Agglom = </span>@ConcToAgglomVal[1].ToString("N2")
+
+
+        </div>
+    </div>
+</RadzenCard>
+
+
+@code {
+
+}

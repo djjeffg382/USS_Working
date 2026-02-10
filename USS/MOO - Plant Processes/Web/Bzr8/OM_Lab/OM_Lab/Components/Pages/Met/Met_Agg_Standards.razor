@@ -1,0 +1,207 @@
+﻿@page "/met_met_agg_standards"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+@inject NotificationService notificationService
+@inject OM_Lab.Data.Models.MetChangeDateVals MetParams
+
+<style>
+    .EntryLabel {
+        display: inline-block !important;
+        width: 150px;
+        font-weight: bold;
+    }
+
+    .EntryBox {
+        width: 80px;
+        text-align: right;
+    }
+
+    .TableEntryBox {
+        text-align: right;
+        width: 100%
+    }
+
+</style>
+
+
+
+<PageTitle>@Util.PROGRAM_TITLE Met Agglomerator Step 1/2</PageTitle>
+<SectionContent SectionName="page-title">Met Agg Standards</SectionContent>
+<RadzenCard class="m-3">
+    <div class="row justify-content-start align-items-center mb-3">
+        <div class="col-10 d-flex">
+            <RadzenDatePicker @bind-Value=@MetParams.MetDate DateFormat="d" Change="LoadData" />
+        </div>
+        <div class="col-2 d-flex align-items-center justify-content-end">
+            <RadzenButton Click="SaveBtnClickAsync" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Save" title="Save Data" Width="50px"
+                          Disabled='@(!DataIsModified || InvalidDateSelection)' BusyText="Saving ..." IsBusy=@IsSaving />
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-3">
+        <div class="col-3">
+            <h6>Reduce Standard:</h6>
+            <RadzenNumeric ShowUpDown="false" TValue="decimal?" Format="0.00" @bind-Value=@MAS_Data.Reduce_Standard Change=@(()=> DataIsModified= true) />
+        </div>
+        <div class="col-3">
+            <h6>LTD Standard:</h6>
+            <RadzenNumeric ShowUpDown="false" TValue="decimal?" Format="0.00" @bind-Value=@MAS_Data.Ltd_Standard Change=@(()=> DataIsModified= true) />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-6">
+
+            <RadzenDataGrid @ref="RadGrid" AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@LineData"
+                            TItem="DAL.Models.Met_Agg_Line" style="width:400px;">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Agg_Line" Property="Line" Title="Line" Width="width:80px" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Agg_Line" Property="Material" Title="Material" Width="width:110px" />
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Agg_Line" Property="Ltb" Title="LTD">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Ltb Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Agg_Line" Property="Reduce" Title="Reduce">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Reduce Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+
+
+
+
+@code {
+    private bool IsSaving = false;
+    private bool DataIsModified = false;
+    private bool InvalidDateSelection = false;
+
+    private DAL.Models.Met_Agg_Standards MAS_Data = new();
+    private List<DAL.Models.Met_Agg_Line> LineData = new();
+    private RadzenDataGrid<DAL.Models.Met_Agg_Line> RadGrid = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task LoadData()
+    {
+        InvalidDateSelection = false;
+        MAS_Data = await Task.Run(() => DAL.Services.Met_Agg_StandardsSvc.Get(MetParams.MetDate));
+        LineData.Clear();
+        if (MAS_Data == null)
+        {
+            //if we don't get any record, create one now
+            MAS_Data = new()
+                {
+                    Datex = MetParams.MetDate,
+                    Dmy = DAL.Models.Met_DMY.Day,
+                    New_Ltd_Reduce_Standard = 0,
+                    Ltd_Standard_Furnace = 2,
+                    Reduce_Standard_Furnace = 1
+                };
+        }
+        //get step 2 line data
+        List<DAL.Models.Met_Agg_Line> a2;
+        a2 = await Task.Run(() => DAL.Services.Met_Agg_LineSvc.Get(MetParams.MetDate, MetParams.MetDate, 3, 5, DAL.Models.Met_Material.Flux));
+        if (a2.Count == 0)
+        {
+            //we aren't running flux, grab the acid records
+            a2 = await Task.Run(() => DAL.Services.Met_Agg_LineSvc.Get(MetParams.MetDate, MetParams.MetDate, 3, 5, DAL.Models.Met_Material.Acid));
+            if (a2.Count != 3)
+            {
+                //records should exist, we do not insert records
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Invalid or missing Agglomerator Data",
+                        Detail = $"Data is missing for Agglomerator 2 Lines on {MetParams.MetDate:MM/dd/yyyy}",
+                        Duration = 8000
+                    });
+                InvalidDateSelection = true;
+            }
+        }
+        LineData.AddRange(a2);
+        //get step 3 line data
+        List<DAL.Models.Met_Agg_Line> a3;
+        a3 = await Task.Run(() => DAL.Services.Met_Agg_LineSvc.Get(MetParams.MetDate, MetParams.MetDate, 6, 7, DAL.Models.Met_Material.Flux));
+        if (a3.Count != 2)
+        {
+            //we aren't running flux, grab the acid records
+            a3 = await Task.Run(() => DAL.Services.Met_Agg_LineSvc.Get(MetParams.MetDate, MetParams.MetDate, 6, 7, DAL.Models.Met_Material.Acid));
+            if (a2.Count == 0)
+            {
+                //records should exist, we do not insert records
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Invalid or missing Agglomerator Data",
+                        Detail = $"Data is missing for Agglomerator 3 Lines on {MetParams.MetDate:MM/dd/yyyy}",
+                        Duration = 8000
+                    });
+                InvalidDateSelection = true;
+            }
+        }
+
+        LineData.AddRange(a3);
+        StateHasChanged();
+        if (RadGrid != null)
+            await RadGrid.Reload();
+
+    }
+
+    private async Task SaveBtnClickAsync()
+    {
+        IsSaving = true;
+        using OracleConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.DMART));
+        await conn.OpenAsync();
+        OracleTransaction trans = conn.BeginTransaction();
+        int recsUpdated;
+        try
+        {
+            recsUpdated = await Task.Run(() => DAL.Services.Met_Agg_StandardsSvc.Update(MAS_Data, conn));
+
+            if (recsUpdated == 0)
+                await Task.Run(() => DAL.Services.Met_Agg_StandardsSvc.Insert(MAS_Data, conn));
+
+            foreach (var lne in LineData)
+            {
+                recsUpdated = await Task.Run(() => DAL.Services.Met_Agg_LineSvc.Update(lne, conn));
+            }
+            trans.Commit();
+            DataIsModified = false;
+        }
+        catch (Exception ex)
+        {
+            trans.Rollback();
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error Saving Data",
+                    Detail = $"Unable to save data: {ex.Message}",
+                    Duration = 8000
+                });
+            MOO.Exceptions.ErrorLog.LogError("/Bzr/OM_Lab/Met_Agg_Standards", ex);
+        }
+        finally
+        {
+            conn.Close();
+        }
+        IsSaving = false;
+    }
+
+}

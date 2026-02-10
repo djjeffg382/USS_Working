@@ -1,0 +1,183 @@
+﻿@page "/lab_mtc_fine_tails"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+
+@inject Radzen.DialogService DialogSvc
+@inject NotificationService NotificationSvc
+
+<PageTitle>@Util.PROGRAM_TITLE - Minntac Fine Tails</PageTitle>
+<SectionContent SectionName="page-title">Minntac Fine Tails</SectionContent>
+
+
+
+<RadzenCard class="m-3" style="width:1400px">
+    <div class="row mb-4">
+        <div class="col-2">
+            <h5>Date:</h5>
+            <RadzenDatePicker @bind-Value=@SelectedDate DateFormat="d" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <h5>Sample:</h5>
+            <RadzenNumeric Step="1" Min="1" Max="4" @bind-Value=@SelectedShift TValue="short" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <RadzenButton Icon="add_circle_outline" Text="Add Record" Click="@InsertRowClick" Disabled=@(FtToInsert != null) />
+        </div>
+    </div>
+
+    <RadzenDataGrid @ref="RadGrid" AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@FTList"
+                    TItem="DAL.Models.Fine_Tails_Analysis" style="width:800px;height:500px"
+                    EditMode="DataGridEditMode.Single" RowUpdate="@OnUpdateRow" RowCreate="@OnCreateRow">
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Property="Sdate" Title="Shift Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Property="Shift" Title="Sample" />
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Property="Sample_Date" Title="Sample_Date" FormatString="{0:MM/dd/yyyy HH:mm}" Width="200px" />
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Property="Line" Title="Line" SortOrder="SortOrder.Ascending">
+                <EditTemplate Context="Ft">
+                    <RadzenNumeric @bind-Value="Ft.Line" ReadOnly=@(FtToInsert == null) Min="3" Max="18" Step="2" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Property="Fe" Title="Fe" FormatString="{0:N2}">
+                <EditTemplate Context="Ft">
+                    <RadzenNumeric @bind-Value="Ft.Fe" Format="0.00" ShowUpDown="false" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+
+            <RadzenDataGridColumn TItem="DAL.Models.Fine_Tails_Analysis" Width="200px">
+                <Template Context="Ft">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@(args => EditRowClick(Ft))" @onclick:stopPropagation="true" title="Edit">
+                    </RadzenButton>
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Class="m-1" Click="@(args => DeleteRowClick(Ft))" @onclick:stopPropagation="true" title="Delete">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="Ft">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Primary" Class="m-1" Click="@((args) => SaveRowClick(Ft))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Class="m-1" Click="@((args) => CancelEditClick(Ft))">
+                    </RadzenButton>
+
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Class="m-1" Click="@(args => DeleteRowClick(Ft))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+
+@code {
+    //Note we will only show odd lines, the even lines will match the previous odd line,  Example line 3 and 4 are equal, line 5 and 6 are equal etc.
+
+    RadzenDataGrid<DAL.Models.Fine_Tails_Analysis>? RadGrid;
+    private DateTime SelectedDate = DateTime.Today;
+    private short SelectedShift = 1;
+    DAL.Models.Fine_Tails_Analysis? FtToInsert;
+
+    private List<DAL.Models.Fine_Tails_Analysis> FTList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadData()
+    {
+        List<DAL.Models.Fine_Tails_Analysis> FTListTmp = await Task.Run(() => DAL.Services.Fine_Tails_AnalysisSvc.GetByDate(SelectedDate, SelectedDate, true));
+        FTList = FTListTmp.FindAll(x => x.Shift == SelectedShift).OrderBy(x => x.Line).ToList();
+    }
+
+
+
+
+    void OnUpdateRow(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        if (Ft == FtToInsert)
+        {
+            FtToInsert = null;
+        }
+        DAL.Services.Fine_Tails_AnalysisSvc.Update(Ft);
+    }
+    void OnCreateRow(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        DAL.Services.Fine_Tails_AnalysisSvc.Insert(Ft);
+    }
+
+
+    async Task SaveRowClick(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        if (Ft == FtToInsert)
+        {
+            FtToInsert = null;
+            await Task.Run(() => DAL.Services.Fine_Tails_AnalysisSvc.Insert(Ft));
+        }
+        else
+            await Task.Run(() => DAL.Services.Fine_Tails_AnalysisSvc.Update(Ft));
+        await LoadData();
+    }
+
+    async Task DeleteRowClick(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        bool? confirm = await DialogSvc.Confirm("Delete record?", "Delete", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+        if (confirm.GetValueOrDefault(false))
+        {
+            if (Ft == FtToInsert)
+            {
+                FtToInsert = null;
+            }
+            await Task.Run(() => DAL.Services.Fine_Tails_AnalysisSvc.Delete(Ft));
+            await LoadData();
+        }
+    }
+
+
+    void CancelEditClick(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        if (Ft == FtToInsert)
+        {
+            FtToInsert = null;
+        }
+
+        RadGrid!.CancelEditRow(Ft);
+
+    }
+    async Task InsertRowClick()
+    {
+        //loop through the data that is showing and find the lowest line number not inserted yet
+        short lineToInsert;
+        for (lineToInsert = 3; lineToInsert <= 18; lineToInsert = lineToInsert += 2)
+        {
+            if (FTList.FirstOrDefault(x => x.Line == lineToInsert) == null)
+                break;  //found a line not inserted yet
+        }
+        if (lineToInsert > 18)  //we didn't find a line to insert
+        {
+            NotificationSvc.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Insert Error",
+                    Detail = "Cannot add a record, all lines currently have data for this interval.  Please edit the line instead",
+                    Duration = 8000
+                });
+            return;
+        }
+        FtToInsert = new()
+            {
+                Sdate = SelectedDate,
+                Shift = SelectedShift,
+                Line = lineToInsert
+            };
+        await RadGrid!.InsertRow(FtToInsert);
+    }
+    async Task EditRowClick(DAL.Models.Fine_Tails_Analysis Ft)
+    {
+        await RadGrid!.EditRow(Ft);
+    }
+}

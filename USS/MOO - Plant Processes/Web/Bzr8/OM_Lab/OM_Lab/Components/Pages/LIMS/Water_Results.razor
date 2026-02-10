@@ -1,0 +1,194 @@
+﻿@page "/lims_water_results"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using ToLive = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+
+@inject Radzen.DialogService DialogSvc
+
+
+<PageTitle>@Util.PROGRAM_TITLE - LIMS Water Results</PageTitle>
+<SectionContent SectionName="page-title">LIMS Water Results</SectionContent>
+
+<RadzenCard style="min-width:1500px">
+    <div class="row mb-2">
+        <div class="col-3">
+            <h5>Start Date:</h5>
+            <RadzenDatePicker @bind-Value=@StartDate DateFormat="d" />
+        </div>
+        <div class="col-3">
+            <h5>End Date:</h5>
+            <RadzenDatePicker @bind-Value=@EndDate DateFormat="d" />
+        </div>
+        <div class="col-3">
+            <h5>Show Non Validated Samples:</h5>
+            <RadzenCheckBox @bind-Value=@ShowNonValidated TValue="bool" />
+        </div>
+
+
+    </div>
+    <div class="row mb-2">
+        <div class="col-4">
+            <h5>Sample Point</h5>
+            <RadzenDropDown AllowClear="true" TValue="LIMS.Models.Sample_Point" class="w-100" AllowFiltering="true"
+                            Data=@SampPtList @bind-Value=@SelectedSampPt TextProperty="Name" />
+        </div>
+        <div class="col-4">
+            <h5>LIMS Batch</h5>
+            <RadzenDropDown AllowClear="true" TValue="ToLive.Models.LIMS_Batch" class="w-100" AllowFiltering="true"
+                            Data=@LimsBatchList @bind-Value=@SelectedLimsBatch TextProperty="Batch_Name" />
+        </div>
+    </div>
+
+
+    <div class="row mb-2">
+        <div class="col-2">
+            <RadzenButton Text="Search" Click="LoadGrid" Icon="search" />
+        </div>
+        <div class="col-7"></div>
+        <div class="col-3" style="font-style:italic; font-size:9pt">
+            Only last 6 months of samples are available.  Older samples are available <a href="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/USS%20Water%20Samples">here</a>.
+        </div>
+    </div>
+
+    <RadzenDataGrid AllowFiltering="false" AllowPaging="true" AllowSorting="true" Data="@SampList" Density="Density.Compact"
+                    TItem="LIMS.Models.WaterResults" style="height:600px" IsLoading="DataIsLoading"
+                    PageSizeOptions="@pageSizeOptions" PageSize="20" ShowPagingSummary="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Property="Sample_Nbr" Title="ID" Width="60px" />
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Property="SamplePoint" Title="Sample Point" Width="250px" />
+
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Property="Login_Date" Title="Login" FormatString="{0:MM/dd/yy}" Width="65px" />
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Property="Sample_Date" Title="Sample Date" FormatString="{0:MM/dd/yy HH:mm}" Width="80px" />
+
+
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Ca" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Ca"))">@data.Ca</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Mg" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Mg"))">@data.Mg</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Na" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Na"))">@data.Na</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="K" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"K"))">@data.K</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Fe" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Fe"))">@data.Fe</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Bromide" Sortable="false" Width="45px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Bromide"))">@data.Bromide</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Chloride" Sortable="false" Width="50px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Chloride"))">@data.Chloride</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Fluoride" Sortable="false" Width="45px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Fluoride"))">@data.Fluoride</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Nitrate" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Nitrate"))">@data.Nitrate</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Nitrite" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Nitrite"))">@data.Nitrite</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Phosphate" Sortable="false" Width="50px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Phosphate"))">@data.Phosphate</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Sulfate" Sortable="false" Width="60px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Sulfate"))">@data.Sulfate</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="pH" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"pH"))">@data.PH</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Alkalinity" Sortable="false" Width="55px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Alkalinity"))">@data.Alkalinity</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.WaterResults" Title="Conductivity" Sortable="false" Width="60px">
+                <Template Context="data">
+                    <span onclick="@(async () => await ClickValueAsync(data,"Conductivity"))">@data.Conductivity</span>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+@code {
+    IEnumerable<int> pageSizeOptions = new int[] { 10, 20, 30, 50 };
+    private List<LIMS.Models.WaterResults> SampList = new();
+    private DateTime StartDate = DateTime.Now.AddDays(-60).Date;
+    private DateTime EndDate = DateTime.Now.Date;
+
+    private bool ShowNonValidated = false;
+
+    private List<LIMS.Models.Sample_Point> SampPtList = new();
+    private LIMS.Models.Sample_Point? SelectedSampPt;
+
+    private List<ToLive.Models.LIMS_Batch> LimsBatchList = new();
+    private ToLive.Models.LIMS_Batch? SelectedLimsBatch;
+
+    private bool DataIsLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            LimsBatchList = await Task.Run(() => ToLive.Services.LIMS_BatchSvc.GetAll(ToLive.Enums.LIMS_Batch_Type.Water).FindAll(x => !string.IsNullOrEmpty(x.Batch_Name)).OrderByDescending(x => x.Created_Date).ToList());
+            SampPtList = await Task.Run(() => LIMS.Services.Sample_PointSvc.GetByLocation("M_WATER"));
+
+            await LoadGrid();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGrid()
+    {
+
+        DataIsLoading = true;
+        string spFilter = (SelectedSampPt == null) ? "" : SelectedSampPt.Identity;
+        int limsBatch = (SelectedLimsBatch == null) ? -1 : SelectedLimsBatch.Batch_Id;
+        SampList = await Task.Run(() => LIMS.Services.WaterResultsSvc.GetAll(StartDate, EndDate,
+                                                        SamplePoint: spFilter, ShowOnlyNonValidate: ShowNonValidated,
+                                                        LimsBatchId:limsBatch));
+        DataIsLoading = false;
+    }
+
+    private async Task ClickValueAsync(LIMS.Models.WaterResults Sample, string CompName)
+    {
+        await DialogSvc.OpenAsync<Dialogs.PrevLIMSResult>("Sample History",
+                   new Dictionary<string, object>() { { "SampleId", Sample.Sample_Nbr }, { "Component", CompName }, { "SamplePoint", Sample.SamplePoint } },
+                   new DialogOptions() { Width = "800px", Height = "500px", Resizable = false, Draggable = true });
+    }
+
+}

@@ -1,0 +1,508 @@
+﻿@using DAL = MOO.DAL.ToLive
+@using LIMS = MOO.DAL.LIMS
+@using Oracle.ManagedDataAccess.Client
+@inject Radzen.DialogService DialogSvc
+@inject NotificationService notificationService
+@inject List<OM_Lab.Data.LIMSExports.EqpExport> LIMSExports
+
+<style type="text/css">
+    .BtchSamp {
+    border: 1px solid black;
+    background-color: #D0E4F5;
+    margin-bottom: 3px;
+    }
+
+    .CurrDrag {
+    background-color: #C0C60F !important;
+    }
+
+    .batchSampleNbr {
+    font-weight: bold;
+    display: inline-block;
+    }
+
+    .batchSampPtName {
+    color: #a11a0b;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 5px;
+    }
+
+    .batchLoginDate {
+    color: #57279c;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 5px;
+    }
+
+    .batchSampleDate {
+    color: #075c15;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 5px;
+    }
+
+    .batchOilType {
+    color: #6b3d0c;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 5px;
+    }
+</style>
+
+<div class="row mb-2">
+    <div class="col-6">
+        <h5>Batch Name</h5>
+        <RadzenTextBox @bind-Value="Batch.Batch_Name" MaxLength="50" class="w-100" />
+    </div>
+    <div class="col-6">
+        <h5>Batch Type</h5>
+        <RadzenDropDown AllowClear="false" TValue="DAL.Enums.LIMS_Batch_Type" @bind-Value="Batch.Batch_Type" Class="w-100"
+        Data="@(Enum.GetValues(typeof(DAL.Enums.LIMS_Batch_Type)))" />
+    </div>
+</div>
+<div class="row mb-2">
+    <div class="col-9">
+        <RadzenNumeric class="w-100" ShowUpDown="false" TValue="int?" @bind-Value=@EnterSampleId @onkeyup="@(async(e) => await SampleEntryKeyPress(e))"
+        Placeholder="Click here and scan samples or Type sample number and hit enter" />
+    </div>
+    <div class="col-3">
+    </div>
+</div>
+
+
+<div style="height:475px;overflow-y:scroll;border:1px solid black">
+    @if (IsLoadingSamples)
+    {
+            <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    <ul ondragover="event.preventDefault();" style="margin:10px">
+        @foreach (var item in BtchSmp)
+        {
+                <li draggable="true" style="list-style-type:none; height:30px;color:black" tabindex="1"
+                @ondrop="@(()=> Drop(item))" @ondragstart="@(()=> StartDrag(item))" @ondragover="@(()=> DragOver(item))" @ondragend="UpdateDragSequence">
+                    <div class=@("BtchSamp " + (item == DragItem ? "CurrDrag":""))>
+                        <span>
+                            <span class="batchSampleNbr">@item.Sample_Number</span>
+                        @if (item.Sample!.Id_Numeric == 0)
+                        {
+
+                            @($" - Sample does not exist in sample manager")
+                        }
+                        else if (item.Sample!.Status.Phrase_Id == "X")
+                        {
+                            @($" - *************************SAMPLE IS CANCELED*************************")
+                        }
+                        else
+                        {
+                                    <span class="batchSampPtName" title="Sample Point">@item.Sample!.Sampling_Point.Name</span>
+                                    <span class="batchLoginDate" title="Login Date">@item.Sample?.Login_Date?.ToString("MM/dd HH:mm")</span>
+                            @if (item.Sample!.Login_Date != item.Sample!.Sampled_Date || item.Sample.Sample_Type.Phrase_Id == "WATER")
+                            {
+                                            <span class="batchSampleDate" title="Sampled Date" @onclick="@(async () => await SampleDateChangeAsync(item))">| @item.Sample?.Sampled_Date?.ToString("MM/dd HH:mm")</span>
+                            }
+                                    <span class="batchOilType" title="Oil Type">
+                                @(item!.Sample!.Oil_Type.Phrase_Text != "NONE" ? item!.Sample.Oil_Type.Phrase_Text : "")
+                                    </span>
+                        }
+                        </span>
+
+                        <RadzenIcon Icon="clear" IconStyle="IconStyle.Danger" title="Remove" @onclick="@(()=> RemoveSampleClick(item))" style="float:right" />
+                        <div style="float:right;font-size:x-small">
+                        @if (item.Sample != null && item.Sample.Tests != null)
+                        {
+                            @String.Join(", ", item.Sample.Tests)
+                        }
+                        </div>
+                    </div>
+
+                </li>
+        }
+    </ul>
+</div>
+<div class="row mt-4">
+    <div class="col-6">Total Samples: @BtchSmp.Count</div>
+    <div class="col-6 text-right">
+        <RadzenButton Icon="save" Text="Save/Receive" Click="SaveBtnClick" IsBusy=@IsSaving BusyText="Saving ..." title="Saves the samples to the batch and marks them received" />
+        <RadzenButton Icon="file_upload" Text="Save/Receive/Export" Click="SaveExportBtnClick" IsBusy=@IsSaving BusyText="Saving ..." title="Saves the samples to the batch, marks them received, and exports to the instruments" />
+        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => DialogSvc.Close(false))" IsBusy=@IsSaving BusyText="Saving ..." />
+    </div>
+</div>
+
+
+@code {
+    [Parameter] public DAL.Models.LIMS_Batch Batch { get; set; } = new();
+    private List<DAL.Models.LIMS_Batch_Samples> BtchSmp = new();
+    private bool IsSaving = false;
+
+    /// <summary>
+    /// Dictionary of items for saving what will be the new sampled date, this will be used on Water samples to allow Analyst to enter a SampledDate
+    /// </summary>
+    private Dictionary<int, DateTime> NewSampledDates = new();
+    int currentIndex;
+    DAL.Models.LIMS_Batch_Samples? DragItem;
+    bool IsLoadingSamples = false;
+
+    private int? EnterSampleId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        if (BtchSmp.Count == 0)
+        {
+            //weird thing was occuring where calling another dialog for entering the date was calling this function again
+            //needed to check if we need to load the samples because of this
+            await LoadSamplesAsync();
+        }
+
+    }
+    private async Task LoadSamplesAsync()
+    {
+        IsLoadingSamples = true;
+        StateHasChanged();
+        BtchSmp = await Task.Run(() => DAL.Services.LIMS_Batch_SamplesSvc.Get(Batch.Batch_Id));
+        await base.OnInitializedAsync();
+        IsLoadingSamples = false;
+    }
+
+    #region "Saving Data"
+    private async Task SaveBtnClick()
+    {
+        if (ValidateEntry())
+        {
+            IsSaving = true;
+            await Task.Run(() => SaveData());
+            string[] receiveErrors = await ReceiveSamples();
+
+            IsSaving = false;
+            if (receiveErrors.Length > 0)
+            {
+                var result = await DialogSvc.OpenAsync("Error Summary", ds =>
+    @<div class="height:500px;overflow-y:scroll">
+            @foreach (string err in receiveErrors)
+    {
+            <div class="mb-2">
+                @($"{err}")
+            </div>
+    }
+        </div>
+    , new DialogOptions() { Height = "600px" });
+            }
+            DialogSvc.Close(true);
+        }
+    }
+
+
+    private async Task SaveExportBtnClick()
+    {
+        if (ValidateEntry())
+        {
+            IsSaving = true;
+            await Task.Run(() => SaveData());
+            string[] receiveErrors = await ReceiveSamples();
+            foreach (var exp in LIMSExports)
+                exp.Export(Batch, BtchSmp, out string _);
+
+            Batch.Last_Instrument_Export = DateTime.Now;
+            IsSaving = false;
+            await ShowExportDialog(receiveErrors, LIMSExports);
+            DialogSvc.Close(true);
+        }
+
+    }
+
+    /// <summary>
+    /// Shows a summary of the export and receiving
+    /// </summary>
+    /// <param name="ReceiveErrors"></param>
+    /// <param name="LIMSExports"></param>
+    /// <returns></returns>
+    async Task ShowExportDialog(string[] ReceiveErrors, List<Data.LIMSExports.EqpExport> LIMSExports)
+    {
+
+
+        var result = await DialogSvc.OpenAsync("Export Results", ds =>
+    @<div class="height:500px;overflow-y:scroll">
+            @foreach (string err in ReceiveErrors)
+    {
+            <div class="mb-2">
+                @($"{err}")
+            </div>
+    }
+            @foreach (Data.LIMSExports.EqpExport exp in LIMSExports)
+    {
+            @if (!string.IsNullOrEmpty(exp.ExportLog))
+    {
+            <h3>
+                @exp.Machine_Name
+            </h3>
+            <div class="mb-4" style="padding-left:10px">
+                @exp.ExportLog
+            </div>
+    }
+
+    }
+        </div>
+    , new DialogOptions() { Height = "600px" });
+
+    }
+
+
+
+    private bool ValidateEntry()
+    {
+        if (string.IsNullOrEmpty(Batch.Batch_Name))
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = "Batch name cannot be empty",
+                    Duration = 4000
+                });
+            return false;
+        }
+        //check for canceled samples
+        foreach (var smp in BtchSmp)
+        {
+            if (smp.Sample.Status.Phrase_Id == "X")
+            {
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Invalid Entry",
+                        Detail = "Batch contains canceled samples",
+                        Duration = 4000
+                    });
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private void SaveData()
+    {
+        Batch.Last_Edit_Date = DateTime.Now;
+        using OracleConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.DMART));
+        conn.Open();
+        //create a transaction as we are making multiple insert/updates/deletes
+        OracleTransaction trans = conn.BeginTransaction();
+        if (Batch.Batch_Id <= 0)
+        {
+            //this is an insert
+            DAL.Services.LIMS_BatchSvc.Insert(Batch, conn);
+        }
+        else
+        {
+            //this is an update, we will delete all children and re-insert
+            DAL.Services.LIMS_BatchSvc.DeleteChildren(Batch, conn);
+            DAL.Services.LIMS_BatchSvc.Update(Batch, conn);
+        }
+        int seq = 1;
+        foreach (var bs in BtchSmp)
+        {
+            bs.Batch_Seq = seq;
+            bs.Batch_Id = Batch.Batch_Id;
+            DAL.Services.LIMS_Batch_SamplesSvc.Insert(bs, conn);
+            seq++;
+        }
+        trans.Commit();
+        conn.Close();
+    }
+
+    private async Task<string[]> ReceiveSamples()
+    {
+        string msg;
+        List<string> retVal = new();
+        foreach (var bs in BtchSmp)
+        {
+            if (bs.Sample != null)
+            {
+                DateTime? newSampleDate = null;
+                if (NewSampledDates.ContainsKey(bs.Sample_Number))
+                    newSampleDate = NewSampledDates[bs.Sample_Number];
+                if (bs.Sample.Status.Phrase_Id == "U")  //only receive unavailable samples
+                {
+                    msg = await Task.Run(() => LIMS.Services.LimsML.ExecuteReceiveSample(bs.Sample_Number, newSampleDate, newSampleDate));
+                    if (!string.IsNullOrEmpty(msg))
+                        retVal.Add($"Error receiving {bs.Sample_Number}: {msg}");
+                }
+                else if (newSampleDate != null)
+                {
+                    //we can't receive a sample that is already received but we need to modify the date
+                    LIMS.Services.LimsML.SetCollected(bs.Sample_Number, newSampleDate.Value);
+                    LIMS.Services.LimsML.SetSampledDate(bs.Sample_Number, newSampleDate.Value);
+                }
+            }
+            else
+                retVal.Add($"Sample {bs.Sample_Number} not found in SampleManager");
+
+
+        }
+        return retVal.ToArray();
+    }
+    #endregion
+
+
+    ///Adds the entered sample in the RadzenText box to the batch
+    private async Task AddSampleToBatch()
+    {
+        if (!EnterSampleId.HasValue)
+            return;
+
+
+
+        DAL.Models.LIMS_Batch_Samples smp = new()
+            {
+                Batch_Id = Batch.Batch_Id,
+                Sample_Number = EnterSampleId.Value,
+                Batch_Seq = BtchSmp.Count + 1
+            };
+
+        if (smp.Sample.Id_Numeric == 0)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Sample",
+                    Detail = $"Sample {EnterSampleId} does not exist in SampleManager",
+                    Duration = 4000
+                });
+            return;
+
+        }
+
+        //check to make sure this is not a duplicate before adding
+        var dup = BtchSmp.FirstOrDefault(x => x.Sample_Number == smp.Sample_Number);
+        if (dup != null)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Sample",
+                    Detail = $"Sample {EnterSampleId} already exists in the list",
+                    Duration = 4000
+                });
+            return;
+        }
+        BtchSmp.Add(smp);
+    }
+
+
+    /// <summary>
+    /// Brings a dialog up for the user to edit sample date
+    /// </summary>
+    /// <param name="Sample"></param>
+    /// <returns></returns>
+    private async Task SampleDateChangeAsync(DAL.Models.LIMS_Batch_Samples Sample)
+    {
+        if (Sample.Sample.Sample_Type.Phrase_Id != "WATER")
+            return;  //only allow Sample Date Edits on Water samples
+        DateTime? dialogResult = await DialogSvc.OpenAsync<Dialogs.NewSampleDate>("Set Sampled Date",
+               new Dictionary<string, object>() { { "SampledDate", Sample.Sample!.Sampled_Date! } },
+               new DialogOptions() { Width = "300px", Height = "200px", Resizable = false, Draggable = true });
+
+        if (dialogResult.HasValue)
+        {
+            //dialog will send a datetime back if user hit ok
+            if (NewSampledDates.ContainsKey(Sample.Sample_Number))
+                NewSampledDates[Sample.Sample_Number] = dialogResult.Value;
+            else
+                NewSampledDates.Add(Sample.Sample_Number, dialogResult.Value);
+            //we will also update the sample's SampledDate as that is what is shown in the GUI
+            Sample.Sample.Sampled_Date = dialogResult.Value;
+        }
+    }
+
+
+
+    private async Task SampleEntryKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await AddSampleToBatch();
+            //clear the entry so user can just keep scanning bar code
+            EnterSampleId = null;
+            StateHasChanged();
+        }
+    }
+
+    #region "Code for handling Drag/Drop"
+
+    //Code that will run when user starts the drag of the batch sample
+    void StartDrag(DAL.Models.LIMS_Batch_Samples item)
+    {
+        currentIndex = GetIndex(item);
+        //set dragitem, this can then be used to style the current item being dragged
+        DragItem = item;
+        StateHasChanged();
+    }
+
+
+    int GetIndex(DAL.Models.LIMS_Batch_Samples item)
+    {
+        return BtchSmp.FindIndex(a => a.Batch_Seq == item.Batch_Seq);
+    }
+
+    //Happens when user drops the batch sample on Drag/Drop
+    void Drop(DAL.Models.LIMS_Batch_Samples item)
+    {
+        MoveItem(item);
+        //now reset the sequence
+        UpdateDragSequence();
+    }
+
+    void UpdateDragSequence()
+    {
+        int seq = 1;
+        foreach (var b in BtchSmp)
+        {
+            b.Batch_Seq = seq;
+            seq++;
+        }
+        DragItem = null;
+        StateHasChanged();
+    }
+
+    //happens when user drags over another batch sample
+    //we want to show it moving through the list
+    void DragOver(DAL.Models.LIMS_Batch_Samples item)
+    {
+        MoveItem(item);
+    }
+
+
+    void MoveItem(DAL.Models.LIMS_Batch_Samples item)
+    {
+        if (item != null)
+        {
+
+            var index = GetIndex(item);
+            // get current item
+            var current = BtchSmp[currentIndex];
+            // remove game from current index
+            BtchSmp.RemoveAt(currentIndex);
+            BtchSmp.Insert(index, current);
+
+            // update current selection
+            currentIndex = index;
+
+            StateHasChanged();
+        }
+    }
+    #endregion
+
+
+    //happens when the user clicks the remove icon on the sample
+    void RemoveSampleClick(DAL.Models.LIMS_Batch_Samples item)
+    {
+        //check if we have this in the new sample date dictionary and remove it here as well
+        if (NewSampledDates.ContainsKey(item.Sample_Number))
+            NewSampledDates.Remove(item.Sample_Number);
+        var index = GetIndex(item);
+        BtchSmp.RemoveAt(index);
+        StateHasChanged();
+    }
+
+}

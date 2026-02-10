@@ -1,0 +1,370 @@
+﻿@page "/met_agg_tons"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using System.Text
+@using System.Data
+@inject Radzen.NotificationService NotificationSvc
+@attribute [Authorize(Roles = "Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+<style type="text/css">
+    .Shift1Tons {
+        background-color: #A3EA9D
+    }
+
+    .Shift2Tons {
+        background-color: #EDED9E
+    }
+
+    .Shift3Tons {
+        background-color: #A0BEEF
+    }
+
+    .ReportTons input {
+        color: black !important;
+    }
+
+
+
+
+    table.ShiftTotals {
+        border: 1px solid #1C6EA4;
+        background-color: #EEEEEE;
+        width: 100%;
+        text-align: left;
+        border-collapse: collapse;
+    }
+
+        table.ShiftTotals td, table.ShiftTotals th {
+            border: 1px solid #AAAAAA;
+            padding: 3px 2px;
+        }
+
+        table.ShiftTotals tbody td {
+            font-size: 13px;
+            color: black;
+        }
+
+        table.ShiftTotals tr:nth-child(even) {
+            background: #D0E4F5;
+        }
+
+        table.ShiftTotals thead {
+            background: #1C6EA4;
+            background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+            background: -webkit-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+            background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+            border-bottom: 2px solid #444444;
+        }
+
+            table.ShiftTotals thead th {
+                font-size: 15px;
+                font-weight: bold;
+                color: #FFFFFF;
+                border-left: 2px solid #D0E4F5;
+            }
+
+                table.ShiftTotals thead th:first-child {
+                    border-left: none;
+                }
+
+
+        table.ShiftTotals tbody {
+            text-align: right;
+        }
+
+</style>
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Agglomerator Tons</PageTitle>
+<SectionContent SectionName="page-title">Agglomerator Tons</SectionContent>
+<div class="row">
+    <div class="col-2 mb-2">
+        <h5>Shift Date</h5>
+        <RadzenDatePicker @bind-Value=ShiftDate ShowTime="false" DateFormat="d" Change="LineDateChange" />
+    </div>
+    <div class="col-2">
+        <h5>Line</h5>
+        <RadzenDropDown @bind-Value=@SelectedLine Data=@WestPoints TextProperty="Line" Change="LineDateChange" />
+    </div>
+</div>
+<div class="row">
+    <RadzenButton Text="Copy From Pulse" Click="CopyAllPulseBtnClick" Style="width:140px" class="m-2" ButtonStyle="ButtonStyle.Secondary" title="Copies All Pulse Values to Report Tons" />
+    <RadzenButton Text="Copy From Analog" Click="CopyAllAnalogBtnClick" Style="width:150px" class="m-2" ButtonStyle="ButtonStyle.Secondary" title="Copies All Analog Values to Report Tons" />
+</div>
+
+<div class="row" style="min-width:1200px">
+    <div class="col-8">
+        <RadzenDataGrid Data="@SelectedLine!.Values" @ref="grdLines" style="height:72vh"
+                        AllowFiltering="false" AllowSorting="true" Density="Density.Compact" IsLoading="GridLoading">
+            <Columns>
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="ReportedTons" Width="100px">
+                    <Template Context="line">
+                        <RadzenButton Text="P" title="Copy Pulse to Reported" Click="() => CopyPulseBtnClick(line.Hour)" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" />
+                        <RadzenButton Text="A" title="Copy Analog to Reported" Click="() => CopyAnalogBtnClick(line.Hour)" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="Shift" Title="Shift" Width="60px" />
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="ReportedTons" Title="Date" Width="150px">
+                    <Template Context="line">
+                        Hour @line.Hour @line.StartDate.ToString("HH:mm") - @line.EndDate.ToString("HH:mm")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="ReportedTons" Title="Report Tons">
+                    <Template Context="line">
+                        <RadzenNumeric @bind-Value=line.ReportedTons TValue="decimal" Format="N2" ShowUpDown="false" class='@($"Shift{line.Shift}Tons ReportTons")' Change=@(args => SumShiftTotals())  />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="PulseTons" Title="Pulse Tons" Width="90px"/>
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="AnalogTons" Title="Analog Tons" Width="100px" />
+                <RadzenDataGridColumn TItem="Data.Models.AggTonLineVals" Property="PulseMinusAnalog" Title="Pulse Minus Analog" />
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+    <div class="col-4">
+        <table class="ShiftTotals">
+            <thead>
+                <tr>
+                    <th>Shift</th>
+                    <th>Reported Pellet Tons</th>
+                    <th>Pellet Tons Pulse Signal</th>
+                    <th>Pellet Tons Analog Signal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>@ReportedTotals[0].ToString("N2")</td>
+                    <td>@PulseTotals[0].ToString("N2")</td>
+                    <td>@AnalogTotals[0].ToString("N2")</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>@ReportedTotals[1].ToString("N2")</td>
+                    <td>@PulseTotals[1].ToString("N2")</td>
+                    <td>@AnalogTotals[1].ToString("N2")</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>@ReportedTotals[2].ToString("N2")</td>
+                    <td>@PulseTotals[2].ToString("N2")</td>
+                    <td>@AnalogTotals[2].ToString("N2")</td>
+                </tr>
+                <tr>
+                    <td>Day</td>
+                    <td>@ReportedTotals.Sum().ToString("N2")</td>
+                    <td>@PulseTotals.Sum().ToString("N2")</td>
+                    <td>@AnalogTotals.Sum().ToString("N2")</td>
+                </tr>
+            </tbody>
+        </table>
+        <RadzenButton Click="SaveData" Text="Save Changes" class="m-2" Style="width:120px" BusyText="Saving..." IsBusy="SavingData" title="Saves changes to the database" />
+    </div>
+</div>
+
+
+@code {
+    private DateTime ShiftDate = DateTime.Today.AddDays(-1);
+    private List<Data.Models.AggTonsLine> WestPoints = new();
+    private Data.Models.AggTonsLine? SelectedLine;
+    private bool SavingData = false;
+    private bool GridLoading = false;
+    RadzenDataGrid<Data.Models.AggTonLineVals>? grdLines;
+
+
+    decimal[] ReportedTotals = new decimal[] { 0, 0, 0 };
+    decimal[] PulseTotals = new decimal[] { 0, 0, 0 };
+    decimal[] AnalogTotals = new decimal[] { 0, 0, 0 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        WestPoints = new();
+        WestPoints.Add(new Data.Models.AggTonsLine() { Line = 3, WestPointId = 867, AnalogPoint = "AL614150", PulsePoint = "AL613031", Plant = MOO.DAL.West_Main.WestMainPlants.Agg2, GBPoint = "AF613003" });
+        WestPoints.Add(new Data.Models.AggTonsLine() { Line = 4, WestPointId = 339, AnalogPoint = "AL601150", PulsePoint = "AL601032", Plant = MOO.DAL.West_Main.WestMainPlants.Agg2, GBPoint = "AF601004" });
+        WestPoints.Add(new Data.Models.AggTonsLine() { Line = 5, WestPointId = 340, AnalogPoint = "AL602150", PulsePoint = "AL602033", Plant = MOO.DAL.West_Main.WestMainPlants.Agg2, GBPoint = "AF602005" });
+        WestPoints.Add(new Data.Models.AggTonsLine() { Line = 6, WestPointId = 564, AnalogPoint = "AL811102", PulsePoint = "PA811101", Plant = MOO.DAL.West_Main.WestMainPlants.Agg3, GBPoint = "AF811000" });
+        WestPoints.Add(new Data.Models.AggTonsLine() { Line = 7, WestPointId = 565, AnalogPoint = "AL813102", PulsePoint = "PA813101", Plant = MOO.DAL.West_Main.WestMainPlants.Agg3, GBPoint = "AF813000" });
+        SelectedLine = WestPoints[0];
+        await LineDateChange();
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task LineDateChange()
+    {
+        GridLoading = true;
+        await SelectedLine!.GetValues(ShiftDate);
+        await grdLines!.Reload();
+        SumShiftTotals();
+        GridLoading = false;
+    }
+    private void SumShiftTotals()
+    {
+        for (int n = 0; n < 3; n++)
+        {
+            ReportedTotals[n] = SelectedLine!.Values.FindAll(x => x.Shift == n + 1).Sum(x => x.ReportedTons);
+            PulseTotals[n] = (decimal)SelectedLine!.Values.FindAll(x => x.Shift == n + 1).Sum(x => x.PulseTons);
+            AnalogTotals[n] = (decimal)SelectedLine!.Values.FindAll(x => x.Shift == n + 1).Sum(x => x.AnalogTons);
+        }
+    }
+
+
+    private void CopyPulseBtnClick(int Hour)
+    {
+        var hr = SelectedLine!.Values.FirstOrDefault(x => x.Hour == Hour);
+        if (hr != null)
+        {
+            hr.ReportedTons = (decimal)hr.PulseTons;
+            SumShiftTotals();
+        }
+    }
+    private void CopyAnalogBtnClick(int Hour)
+    {
+        var hr = SelectedLine!.Values.FirstOrDefault(x => x.Hour == Hour);
+        if (hr != null)
+        {
+            hr.ReportedTons = (decimal)hr.AnalogTons;
+            SumShiftTotals();
+        }
+    }
+
+    private void CopyAllPulseBtnClick()
+    {
+        foreach (var val in SelectedLine!.Values)
+        {
+            val.ReportedTons = (decimal)val.PulseTons;
+        }
+        SumShiftTotals();
+    }
+    private void CopyAllAnalogBtnClick()
+    {
+        foreach (var val in SelectedLine!.Values)
+        {
+            val.ReportedTons = (decimal)val.AnalogTons;
+        }
+        SumShiftTotals();
+    }
+
+    private async Task SaveData()
+    {
+        SavingData = true;
+        foreach (var val in SelectedLine!.Values)
+        {
+            //update the west hourly record
+            if (val.WestHourlyRecord != null)
+            {
+                val.WestHourlyRecord.Hour_Total = val.ReportedTons;
+                await Task.Run(() => MOO.DAL.West_Main.Services.West_HourlySvc.Update(val.WestHourlyRecord));
+            }
+            else
+            {
+
+                //insert a west hourly record
+                short half;
+                short modHour = (short)(val.Hour % 8);
+                if (modHour <= 4 && modHour != 0)
+                    half = 1;
+                else
+                    half = 2;
+
+                MOO.DAL.West_Main.Models.West_Hourly whRec = new()
+                    {
+                        Plant = SelectedLine.Plant,
+                        Hour = val.Hour,
+                        Hour_Total = val.ReportedTons,
+                        Id = SelectedLine.WestPointId,
+                        N_Count = 960,
+                        Shift = (short)val.Shift,
+                        Ymd = int.Parse(ShiftDate.ToString("yyyyMMdd")),
+                        Half = half,
+                        TimeStamp = val.EndDate
+                    };
+                await Task.Run(() => MOO.DAL.West_Main.Services.West_HourlySvc.Insert(whRec));
+            }
+        }
+        await ShiftRollup();
+        await DayRollup();
+        //finally, we need to run the shift package to redo the calculations
+        await RunShiftPkg(1);
+        await RunShiftPkg(2);
+        await RunShiftPkg(3);
+
+        SavingData = false;
+        NotificationSvc.Notify(new NotificationMessage()
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Data Saved",
+                Detail = "Data has been updated",
+                Duration = 4000
+            });
+    }
+
+
+    private async Task RunShiftPkg( short ShiftNumber)
+    {
+        string sql;
+        DateTime ShiftPkgDate;
+        switch (ShiftNumber)
+        {
+            case 1:
+                ShiftPkgDate = ShiftDate.AddMinutes(-90);
+                break;
+            case 2:
+                ShiftPkgDate = ShiftDate.AddHours(6.5);
+                break;
+            case 3:
+                ShiftPkgDate = ShiftDate.AddHours(14.5);
+                break;
+            default:
+                throw new Exception("Invalid Shift Number");
+        }
+        
+        sql = $"BEGIN {SelectedLine!.Plant}_shift_pkg.run_manual('{ShiftPkgDate.ToString("yyyyMMdd HH:mm")}','CALC','JOH8811'); END;";
+        await Task.Run(() => MOO.Data.ExecuteNonQuery(sql, MOO.Data.MNODatabase.DMART));
+    }
+
+
+    /// <summary>
+    /// Sums up the hourly values and rolls it up to the shift record
+    /// </summary>
+    /// <returns></returns>
+    private async Task ShiftRollup()
+    {
+        StringBuilder sql = new();
+        sql.AppendLine($"UPDATE west_main.west_shift_{SelectedLine!.Plant.ToString()} s");
+        sql.AppendLine("    SET (shift_total, n_count)");
+        sql.AppendLine("        = (	SELECT SUM(h.hour_total), SUM(h.n_count)");
+        sql.AppendLine($"                FROM west_main.west_hourly_{SelectedLine!.Plant.ToString()} h");
+        sql.AppendLine("                WHERE h.id = s.id");
+        sql.AppendLine("                AND h.ymd = s.ymd");
+        sql.AppendLine("            AND h.shift = s.shift");
+        sql.AppendLine(")");
+        sql.AppendLine($"WHERE s.ymd = {ShiftDate:yyyyMMdd}");
+        sql.AppendLine($"    AND s.id = {SelectedLine.WestPointId}");
+
+        var recsAffected = await Task.Run(() => MOO.Data.ExecuteNonQuery(sql.ToString(), MOO.Data.MNODatabase.DMART));
+    }
+
+
+
+    /// <summary>
+    /// Sums up the Shift values and rolls it up to the Day record
+    /// </summary>
+    /// <returns></returns>
+    private async Task DayRollup()
+    {
+        StringBuilder sql = new();
+        sql.AppendLine($"UPDATE west_main.west_daily_{SelectedLine!.Plant.ToString()} d");
+        sql.AppendLine("    SET (day_total, n_count)");
+        sql.AppendLine("        = (	SELECT SUM(s.shift_total), SUM(s.n_count)");
+        sql.AppendLine($"                FROM west_main.west_shift_{SelectedLine!.Plant.ToString()} s");
+        sql.AppendLine("                WHERE s.id = d.id");
+        sql.AppendLine("                AND s.ymd = d.ymd");
+        sql.AppendLine(")");
+        sql.AppendLine($"WHERE d.ymd = {ShiftDate:yyyyMMdd}");
+        sql.AppendLine($"    AND d.id = {SelectedLine.WestPointId}");
+
+        var recsAffected = await Task.Run(() => MOO.Data.ExecuteNonQuery(sql.ToString(), MOO.Data.MNODatabase.DMART));
+    }
+}

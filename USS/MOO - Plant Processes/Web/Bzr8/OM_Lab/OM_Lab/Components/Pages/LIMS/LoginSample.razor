@@ -1,0 +1,212 @@
+﻿@page "/lims_loginsample"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using System.Text
+@using System.Data
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Radzen.DialogService DialogSvc
+
+
+<PageTitle>@Util.PROGRAM_TITLE - LIMS Sample Login</PageTitle>
+<SectionContent SectionName="page-title">LIMS Login Sample</SectionContent>
+
+<RadzenCard>
+    <div class="row mb-4">
+        <div class="col-3">
+            <h3>Location:</h3>
+            <RadzenDropDown @bind-Value=@SelectedLocation Data=@Locations Change="LocationChangedAsync" TextProperty="Text" />
+        </div>
+        <div class="col-3">
+            <h3>Equipment:</h3>
+            <RadzenDropDown @bind-Value=@SelectedEquip Data=@EquipList TextProperty="Name" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" Change="GetSamplePointsAsync" />
+        </div>
+        <div class="col-3">
+            <h3>Label Printer:</h3>
+            <RadzenDropDown @bind-Value=@SelectedLabelPrinter Data=@LabelPrinterList TextProperty="Text" />
+        </div>
+    </div>
+    <div class="mb-4">
+        <RadzenCheckBoxList @bind-Value=@SelectedSamples Data="SamplePointList" TValue="LIMS.Models.Sample_Point" TextProperty="Name" Orientation="Orientation.Vertical" AllowSelectAll="true" SelectAllText="Select All">
+        </RadzenCheckBoxList>
+    </div>
+
+    <RadzenButton Click="LoginSampleBtnClickAsync" Text="Login" ButtonStyle="ButtonStyle.Primary" IsBusy="LoginSampleRunning" BusyText="Logging In..." />
+</RadzenCard>
+
+@code {
+    /// <summary>
+    /// available values for the location dropdown box
+    /// </summary>
+    DropdownVals[] Locations = new DropdownVals[] { new DropdownVals() { Text = "Minntac Mine" , Value="M_MINE"},
+                                                    new DropdownVals() { Text = "Minntac Crusher" , Value="M_CRUSH"},
+                                                    new DropdownVals() { Text = "Minntac Agglomerator" , Value="M_AGGL"},
+                                                    new DropdownVals() { Text = "Keetac Mine" , Value ="K_MINE"},
+                                                    new DropdownVals() { Text = "Keetac Crusher", Value="K_CRUSH" }
+    };
+
+    /// <summary>
+    /// the selected value of the location dropdown box
+    /// </summary>
+    DropdownVals SelectedLocation = new();
+
+    /// <summary>
+    /// Available values for the equipment dropdown box
+    /// </summary>
+    List<LIMS.Models.Location> EquipList = new();
+
+    /// <summary>
+    /// selected value of the equipment dropdown box
+    /// </summary>
+    LIMS.Models.Location? SelectedEquip = null;
+
+    /// <summary>
+    /// Available valuse for the label printer dropdown
+    /// </summary>
+    DropdownVals[]? LabelPrinterList;
+    /// <summary>
+    /// Selected value of the label printer dropdown
+    /// </summary>
+    DropdownVals? SelectedLabelPrinter;
+
+    /// <summary>
+    /// Available list of sample points for user to choose in the checkbox list
+    /// </summary>
+    List<LIMS.Models.Sample_Point> SamplePointList = new();
+    /// <summary>
+    /// Value of the checkbox list for the sample points chosen to login
+    /// </summary>
+    IEnumerable<LIMS.Models.Sample_Point> SelectedSamples = new List<LIMS.Models.Sample_Point>();
+
+
+
+    /// <summary>
+    /// Async indicator that we are currently logging in samples (login button clicked)
+    /// </summary>
+    bool LoginSampleRunning = false;
+
+
+    /// <summary>
+    /// Class used as a generic Text/Value for the dropdown list
+    /// </summary>
+    class DropdownVals
+    {
+        public string Text = "";
+        public string Value = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        SelectedLocation = Locations[0];
+        await GetEquipment();
+        GetLabelPrinters();
+        await GetSamplePointsAsync();
+        await base.OnInitializedAsync();
+    }
+
+    /// <summary>
+    /// Location dropdown is changed
+    /// </summary>
+    /// <returns></returns>
+    private async Task LocationChangedAsync()
+    {
+        await GetEquipment();
+        await GetSamplePointsAsync();
+        SamplePointList = new();  //clear the checkbox list for sample points
+        GetLabelPrinters();
+    }
+
+    /// <summary>
+    /// Gets the equipment for the location selected
+    /// </summary>
+    /// <returns></returns>
+    private async Task GetEquipment()
+    {
+        EquipList = await Task.Run(() => LIMS.Services.LocationSvc.GetAll(SelectedLocation.Value));
+        SelectedEquip = null;
+    }
+
+    /// <summary>
+    /// fills the label printer list based on the location selection
+    /// </summary>
+    private void GetLabelPrinters()
+    {
+
+        switch (SelectedLocation.Value)
+        {
+            case "M_MINE":
+                LabelPrinterList = new DropdownVals[] { new DropdownVals() { Text = "Mine Annex", Value = "M_MINE_LBL" },
+                                                        new DropdownVals() {Text = "MES Label Printer", Value="M_MES_LBL" }
+                                                };
+                break;
+            case "M_AGGL":
+                LabelPrinterList = new DropdownVals[] { 
+                                                        new DropdownVals() {Text = "Agg3 Printer", Value="M_AGG3_LBL" }
+                                                };
+                break;
+            case "M_CRUSH":
+                LabelPrinterList = new DropdownVals[] { new DropdownVals() { Text = "Minntac Crusher", Value = "M_CRS_LBL" } };
+                break;
+            case "K_MINE":
+            case "K_CRUSH":
+                LabelPrinterList = new DropdownVals[] { new DropdownVals() { Text = "Keetac Mine", Value = "K_MINE_LBL" } };
+                break;
+            default:
+                //we shouldn't get here
+                throw new Exception($"Printer {SelectedLocation.Value} not implemented");
+        }
+        SelectedLabelPrinter = LabelPrinterList[0];
+    }
+
+
+    /// <summary>
+    /// Gets the sample points for the equipment selected
+    /// </summary>
+    /// <returns></returns>
+    private async Task GetSamplePointsAsync()
+    {
+        if (SelectedEquip != null)
+            SamplePointList = await Task.Run(() => LIMS.Services.Sample_PointSvc.GetByLocation(SelectedEquip.Identity));
+
+    }
+
+
+    private async Task LoginSampleBtnClickAsync()
+    {
+        List<string> samplesLoggedIn = new();
+        LoginSampleRunning = true;
+        string userName = "";
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User != null)
+            userName = authState.User!.Identity!.Name!;
+
+
+        foreach (LIMS.Models.Sample_Point smp in SelectedSamples)
+        {
+            try
+            {
+
+                int sampNbr = await Task.Run(() => LIMS.Services.LimsML.LoginOilSample(smp.Identity, userName, SelectedLabelPrinter!.Value));
+                samplesLoggedIn.Add($"{smp.Name} ------ Sample #{sampNbr}");
+            }
+            catch (Exception ex)
+            {
+                MOO.Exceptions.ErrorLog.LogError(Util.PROGRAM_NAME, ex.Message, ex.StackTrace, $"Error Logging in sample for {smp.Name}", MOO.Exceptions.ErrorLog.ErrorLogType.Crash);
+                samplesLoggedIn.Add($"{smp.Name} ------ Error Logging in sample");
+            }
+
+        }
+        var result = await DialogSvc.OpenAsync("Login Summary", ds =>
+    @<div class="height:500px;overflow-y:scroll">
+        @foreach (string smp in samplesLoggedIn)
+        {
+            <div class="mb-2">
+                @($"{smp}")
+            </div>
+        }
+    </div>
+                    , new DialogOptions() { Height = "600px" });
+        //clear the list after running log in
+        SelectedSamples = new List<LIMS.Models.Sample_Point>();
+        LoginSampleRunning = false;
+    }
+}

@@ -1,0 +1,137 @@
+﻿@using OM_Lab.Data.Models
+@using OM_Lab.Data.Services
+
+<style type="text/css">
+    .labChemPhysTbl .head th {
+        text-align: center;
+        width: 100px;
+    }
+
+    .labChemPhysTbl .tblTitle {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-align: center;
+        background-color: #808080;
+        color: black;
+        font-weight: bold;
+        padding: 0px;
+        width: 100px;
+    }
+
+    .labChemPhysTbl {
+        border-collapse: collapse;
+        border-style: none;
+        margin: 5px 5px 10px 10px;
+        table-layout: fixed;
+    }
+
+
+        .labChemPhysTbl td {
+            border-width: 1px;
+            border-color: black;
+            border-style: solid;
+            height: 1rem !important;
+            font-size: 10pt !important;
+        }
+
+        .labChemPhysTbl th {
+            border-width: 1px;
+            border-color: black;
+            border-style: solid;
+            font-weight: bold;
+            font-size: 10pt;
+            vertical-align: top;
+            background-color: #e0e0e0;
+            color: black;
+            text-align: center;
+        }
+
+
+    .valueEntry {
+        width: 100%;
+        text-align: right;
+    }
+
+    .rz-numeric {
+        height: 20px !important;
+    }
+
+    .rz-numeric-input {
+        height: 10px !important;
+        font-size: 9pt !important;
+    }
+</style>
+
+@* setting the table in a small div will allow the table to have fixed column widths *@
+<div style="width:100px"> 
+    <table class="labChemPhysTbl" style=@($"width:{Width}")>
+        <tr class="head">
+            <td class="tblTitle" rowspan="@(Samples.Count + 1)">@TableTitle</td>
+            <th style="width:100px">Sample Time</th>
+            <th>% Fe</th>
+            <th>% SiO2</th>
+            <th>CaO</th>
+            <th>Al2O3</th>
+            <th>Mn</th>
+            <th>Mgo</th>
+            @if (Show325M)
+            {
+                <th>+325M</th>
+            }
+            @if (Show500M)
+            {
+                <th>+500M</th>
+            }
+        </tr>
+        @foreach (var sample in Samples)
+        {
+            <tr>
+                <th>
+                    @sample.SampleDate.ToString("h tt")
+                </th>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.Fe" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.SiO2" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.CaO" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.Al2O3" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.Mn" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                <td>
+                    <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="sample.Chem_Analysis.MgO" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                </td>
+                @if (Show325M)
+                {
+                    <td>
+                        <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" TValue="double?" Value="sample.Phys_Analysis.Mesh_325_Pct" Change="(val) => sample.Phys_Analysis.Mesh_325_Wgt = LabChemPhysSvc.MESH_START_WGT*(val/100)" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                    </td>
+                }
+                @if (Show500M)
+                {
+                    <td>
+                        <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" TValue="double?" Value="sample.Phys_Analysis.Mesh_500_Pct" Change="(val) => sample.Phys_Analysis.Mesh_500_Wgt = LabChemPhysSvc.MESH_START_WGT*(val/100)" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                    </td>
+                }
+            </tr>
+        }
+    </table>
+</div>
+
+@code {
+
+    [Parameter] public List<LabChemPhys> Samples { get; set; } = new();
+    [Parameter] public bool Show325M { get; set; } = false;
+    [Parameter] public bool Show500M { get; set; } = false;
+    [Parameter] public string TableTitle { get; set; } = "";
+    [Parameter] public string Width { get; set; } = "100%";
+
+
+
+}

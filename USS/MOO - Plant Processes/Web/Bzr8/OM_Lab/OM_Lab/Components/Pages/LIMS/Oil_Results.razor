@@ -1,0 +1,358 @@
+﻿@page "/lims_oil_results"
+@rendermode InteractiveServer
+@using LIMS = MOO.DAL.LIMS
+@using OM_Lab.Components.Elements
+@using ToLive = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+
+@using Microsoft.JSInterop
+@using System.Text.Json
+
+@inject IJSRuntime JSRuntime
+
+@inject TooltipService tooltipService
+
+
+<PageTitle>@Util.PROGRAM_TITLE - LIMS Oil Results</PageTitle>
+<SectionContent SectionName="page-title">LIMS Oil Results</SectionContent>
+
+<RadzenCard style="min-width:1500px">
+    <div class="row mb-2">
+        <div class="col-3">
+            <h5>Start Date:</h5>
+            <RadzenDatePicker @bind-Value=@StartDate DateFormat="d"/>
+        </div>
+        <div class="col-3">
+            <h5>End Date:</h5>
+            <RadzenDatePicker @bind-Value=@EndDate DateFormat="d"/>
+        </div>
+        <div class="col-3">
+            <h5>Show Only Out Of Spec:</h5>
+            <RadzenCheckBox @bind-Value=@ShowOnlyOutOfSpec TValue="bool" />
+        </div>
+        <div class="col-3">
+            <h5>Show Non Validated Samples:</h5>
+            <RadzenCheckBox @bind-Value=@ShowNonValidated TValue="bool" />
+        </div>
+
+
+    </div>
+    <div class="row mb-2">
+        <div class="col-3">
+            <h5>Location</h5>
+            <RadzenDropDown AllowClear="true" TValue="LIMS.Models.Location" class="w-100"
+            Data=@LocList @bind-Value=@SelectedLoc TextProperty="Name"
+            Change="LocValChanged" />
+        </div>
+        <div class="col-3">
+            <h5>Equipment</h5>
+            <RadzenDropDown AllowClear="true" TValue="LIMS.Models.Location" class="w-100"
+            Data=@EqList @bind-Value=@SelectedEq TextProperty="Name" AllowFiltering="true"
+            Change="EqValChanged" />
+        </div>
+        <div class="col-3">
+            <h5>Sample Point</h5>
+            <RadzenDropDown AllowClear="true" TValue="LIMS.Models.Sample_Point" class="w-100"
+            Data=@SampPtList @bind-Value=@SelectedSampPt TextProperty="Name" />
+        </div>
+        <div class="col-3">
+            <h5>LIMS Batch</h5>
+            <RadzenDropDown AllowClear="true" TValue="ToLive.Models.LIMS_Batch" class="w-100" AllowFiltering="true"
+            Data=@LimsBatchList @bind-Value=@SelectedLimsBatch TextProperty="Batch_Name" />
+        </div>
+    </div>
+
+
+    <div class="row mb-2">
+        <div class="col-2">
+            <RadzenButton Text="Search" Click="LoadGrid" Icon="search" />
+        </div>
+        <div class="col-7"></div>
+        <div class="col-3" style="font-style:italic; font-size:9pt">
+            Only last 6 months of samples are available.  Older samples are available <a href="http://mno-reports.mno.uss.com/Reports/report/Minntac/Lab/Oil%20Results">here</a>.
+        </div>
+    </div>
+
+    <RadzenDataGrid AllowFiltering="false" AllowPaging="true" AllowSorting="true" Data="@SampList" Density="Density.Compact" @bind-Settings="@GridSettings"
+    TItem="LIMS.Models.OilResults" style="height:600px" IsLoading="DataIsLoading" AllowColumnPicking="true"
+    PageSizeOptions="@pageSizeOptions" PageSize="20" ShowPagingSummary="true" AllowColumnResize="true" >
+        <Columns>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Sample_Nbr" Title="ID" Width="60px" Frozen="true" />
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="SamplePoint" Title="Sample Point" Width="230px" Frozen="true" />
+
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Login_Date" Title="Login" FormatString="{0:MM/dd/yy}" Width="70px"/>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Recd_Date" Title="Received" FormatString="{0:MM/dd/yy}" Width="70px" />
+            
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Glycol" Title="Glycol" Width="50px" Sortable="false" >
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Glycol" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Soot_3800" Title="Soot 3800" Width="50px" Sortable="false">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Soot_3800" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Soot_1980" Title="Soot 1980" Width="50px" Sortable="false">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Soot_1980" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Oxidation" Title="Oxidation" Width="50px" Sortable="false">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Oxidation" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Water" Title="Water" Width="50px" Sortable="false">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Water" />
+                </Template>
+            </RadzenDataGridColumn>
+
+
+
+
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Cu" Title="Cu" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Cu" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Fe" Title="Fe" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Fe" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Cr" Title="Cr" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Cr" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Al" Title="Al" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Al" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Si" Title="Si" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Si" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Pb" Title="Pb" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Pb" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Ca" Title="Ca" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Ca" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Mg" Title="Mg" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Mg" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Zn" Title="Zn" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Zn" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="P" Title="P" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="P" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Mo" Title="Mo" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Mo" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Sn" Title="Sn" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Sn" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="K" Title="K" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="K" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Na" Title="Na" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Na" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Ni" Title="Ni" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Ni" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Ag" Title="Ag" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Ag" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="ISO4" Title="ISO4" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="ISO4" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="ISO6" Title="ISO6" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="ISO6" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="ISO14" Title="ISO14" Sortable="false" Width="40px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="ISO14" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Viscosity" Title="Viscosity" Sortable="false" Width="60px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Viscosity" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="PQ" Title="PQ" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="PQ" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Glycol_GC" Title="Glycol_GC" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Glycol_GC" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LIMS.Models.OilResults" Property="Diesel" Title="Diesel" Sortable="false" Width="35px">
+                <Template Context="data">
+                    <OilResultTblCell Sample=@data Component="Diesel" />
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+@code {
+    IEnumerable<int> pageSizeOptions = new int[] { 10, 20, 30, 50 };
+    private List<LIMS.Models.OilResults> SampList = new();
+    private DateTime StartDate = DateTime.Now.AddDays(-180).Date;
+    private DateTime EndDate = DateTime.Now.Date;
+
+    private bool ShowOnlyOutOfSpec = false;
+    private bool ShowNonValidated = false;
+
+
+    private List<LIMS.Models.Location> FullLocList = new();
+
+    private List<LIMS.Models.Location> LocList = new();
+    private LIMS.Models.Location? SelectedLoc;
+
+    private List<LIMS.Models.Location> EqList = new();
+    private LIMS.Models.Location? SelectedEq;
+
+    private List<LIMS.Models.Sample_Point> SampPtList = new();
+    private LIMS.Models.Sample_Point? SelectedSampPt;
+
+    private List<ToLive.Models.LIMS_Batch> LimsBatchList = new();
+    private ToLive.Models.LIMS_Batch? SelectedLimsBatch;
+
+    private bool DataIsLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if(firstRender)
+        {
+            FullLocList = await Task.Run(() => LIMS.Services.LocationSvc.GetAll());
+            //location list is full loc list where parent is "Minntac" or "Keetac"
+            LocList = FullLocList.FindAll((x =>
+                                x.Parent_Location != null && (x.Parent_Location.Name.Equals("Minntac") || x.Parent_Location.Name.Equals("Keetac"))
+                                )).OrderBy(x => x.Name).ToList();
+
+            LimsBatchList = await Task.Run(() => ToLive.Services.LIMS_BatchSvc.GetAll(ToLive.Enums.LIMS_Batch_Type.Oil).FindAll(x => !string.IsNullOrEmpty(x.Batch_Name)).OrderByDescending(x => x.Created_Date).ToList());
+
+
+            await LoadGrid();
+            await LoadStateAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadGrid(){
+
+        DataIsLoading = true;
+        string locFilter = (SelectedLoc == null) ? "" : SelectedLoc.Identity;
+        string eqFilter = (SelectedEq == null) ? "" : SelectedEq.Identity;
+        string spFilter = (SelectedSampPt == null) ? "" : SelectedSampPt.Identity;
+        int limsBatch = (SelectedLimsBatch == null) ? -1 : SelectedLimsBatch.Batch_Id;
+        SampList = await Task.Run(() => LIMS.Services.OilResultsSvc.GetAll(StartDate, EndDate, 
+                                                        Location: locFilter, Equipment: eqFilter, SamplePoint: spFilter, 
+                                                        ShowOnlyNonValidate: ShowNonValidated, ShowOnlyOutOfSpec: ShowOnlyOutOfSpec,
+                                                        LimsBatchId:limsBatch));
+        DataIsLoading = false;
+    }
+
+    private void LocValChanged(){
+        SelectedEq = null;
+        SelectedSampPt = null;
+        if(SelectedLoc == null)
+            EqList = new();
+        else
+            EqList = FullLocList.FindAll((x =>
+                            x.Parent_Location != null && x.Parent_Location.Name.Equals(SelectedLoc.Name )
+                            )).OrderBy(x => x.Name).ToList();
+    }
+
+    private void EqValChanged()
+    {
+        SelectedSampPt = null;
+        if (SelectedEq == null)
+            SampPtList = new();
+        else
+            SampPtList = LIMS.Services.Sample_PointSvc.GetByLocation(SelectedEq.Identity);
+    }
+
+    #region "DataGrid Saving Settings"
+    DataGridSettings? _gridSettings;
+    public DataGridSettings? GridSettings
+    {
+        get
+        {
+            return _gridSettings;
+        }
+        set
+        {
+            if (_gridSettings != value)
+            {
+                _gridSettings = value;
+                InvokeAsync(SaveStateAsync);
+            }
+        }
+    }
+
+    private const string GRID_COOOKIE_NAME = "OilRsltSetting";
+    private async Task LoadStateAsync()
+    {
+        await Task.CompletedTask;
+
+        var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", GRID_COOOKIE_NAME);
+        if (!string.IsNullOrEmpty(result))
+        {
+            _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(result);
+        }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        await Task.CompletedTask;
+
+        await JSRuntime.InvokeVoidAsync("window.localStorage.setItem", GRID_COOOKIE_NAME, JsonSerializer.Serialize<DataGridSettings>(GridSettings!));
+    }
+
+    #endregion
+
+}

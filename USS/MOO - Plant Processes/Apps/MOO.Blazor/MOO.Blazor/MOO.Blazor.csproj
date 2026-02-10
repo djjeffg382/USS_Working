@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>8.7.3</Version>
+    <Company>United States Steel Corporation</Company>
+    <Authors>Altman, Stark</Authors>
+    <Description>MOO Blazor Library</Description>
+    <Copyright>2024</Copyright>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.19" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.19" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+    <PackageReference Include="Polly" Version="8.6.3" />
+    <PackageReference Include="Radzen.Blazor" Version="7.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MOO.DAL\MOO.DAL\MOO.DAL.csproj" />
+    <ProjectReference Include="..\..\MOO\MOO\MOO.csproj" />
+    <ProjectReference Include="..\..\MOO_AD\MOO_AD\MOO_AD.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Components\AppInfo.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+</Project>

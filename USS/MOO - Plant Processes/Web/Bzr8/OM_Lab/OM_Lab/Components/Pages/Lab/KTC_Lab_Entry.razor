@@ -1,0 +1,679 @@
+﻿@page "/lab_ktc_lab_entry"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.Core
+@using ToLive = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_COOR,M_OM_MGR,LabDatApvl,LabDatEnt")]
+
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService notificationService
+
+<style type="text/css">
+
+    /*  These have to be in the .razor file for it to work to stylize the numeric textboxes smaller (not sure why it can't be in a separate file)*/
+    .LabTable .rz-numeric {
+        height: 20px !important;
+    }
+
+    .LabTable .rz-numeric-input {
+        height: 10px !important;
+        font-size: 9pt !important;
+        text-align: right !important;
+    }
+
+    .LabTable input:disabled.rz-numeric-input {
+        background-color: olivedrab !important;
+        color:black !important
+    }
+</style>
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - KTC Lab Data Entry</PageTitle>
+<SectionContent SectionName="page-title">KTC Lab Data Entry</SectionContent>
+
+<div class="row" style="min-width:1250px">
+    <div class="col-9">
+        <div id="divLabTables">
+
+
+
+            <table id="LabTable1" class="LabTable" style="width:675px">
+
+                <tr class="Header1">
+                    <td></td>
+                    <td colspan="2">Tails % Magnetic Iron</td>
+                    <td colspan="2">NOLA</td>
+                    <td></td>
+                </tr>
+                <tr class="Header2">
+                    <td>Shift</td>
+                    <td>Hydro</td>
+                    <td>Thickener</td>
+                    <td>NOLA % SiO<sub>2</sub></td>
+                    <td>Control SiO<sub>2</sub></td>
+                    <td>Conc FE %</td>
+                </tr>
+                <tr>
+                    <td class="Header2">1</td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].TailsHydro Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].TailsThickener Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].NOLA_SiO2 Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].Control_SiO2[0] Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].Control_SiO2[1] Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].ConcFe[0] Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[0].ConcFe[1] Disabled=@(LabData.ConcShift[0].Approval != null ) Format="N2" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="Header2">2</td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].TailsHydro Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].TailsThickener Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].NOLA_SiO2 Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].Control_SiO2[0] Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].Control_SiO2[1] Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].ConcFe[0] Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[1].ConcFe[1] Disabled=@(LabData.ConcShift[1].Approval != null ) Format="N2" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="Header2">3</td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].TailsHydro Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].TailsThickener Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].NOLA_SiO2 Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].Control_SiO2[0] Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].Control_SiO2[1] Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                    </td>
+                    <td>
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].ConcFe[0] Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                        <br />
+                        <RadzenNumeric ShowUpDown="false" @bind-Value=@LabData.ConcShift[2].ConcFe[1] Disabled=@(LabData.ConcShift[2].Approval != null ) Format="N2" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="Header2">% Mag Iron</td>
+                    <td id="tdMagIron" colspan="2" style="text-align:right;width:auto">@LabData.TailsMagFePct?.ToString("N2")</td>
+                    <td colspan="4" class="Header2"></td>
+                </tr>
+            </table>
+
+
+            <table id="LabTableScn" class="LabTable">
+                <tr class="Header1">
+                    <td colspan="8">Concentrate Screen</td>
+                </tr>
+                <tr class="Header2">
+                    <td >Sample Time</td>
+                    <td>Start Weight</td>
+                    <td>+100 Mesh</td>
+                    <td>+100 Mesh %</td>
+                    <td>+200 Mesh</td>
+                    <td>+200 Mesh %</td>
+                    <td>+325 Mesh</td>
+                    <td>+325 Mesh %</td>
+                </tr>
+
+                @foreach (var cs in ConcScreen)
+                {
+                    <tr>
+                        <td class="Header2">
+                            @cs.Analysis_Date.ToString("h tt")
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value="cs.Start_Wgt" Format="N2" Disabled=@(LabData.ConcShift[cs.Shift_Nbr8 -1].Approval != null ) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value="cs.Mesh_100_Wgt" Format="N2" Disabled=@(LabData.ConcShift[cs.Shift_Nbr8 -1].Approval != null ) />
+                        </td>
+                        <td style="text-align:right">
+                            @if (cs.Mesh_100_Pct.HasValue)
+                            {
+                                @(cs.Mesh_100_Pct.GetValueOrDefault(0).ToString("N2"))
+                                <span>%</span>
+                            }
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value="cs.Mesh_200_Wgt" Format="N2" Disabled=@(LabData.ConcShift[cs.Shift_Nbr8 -1].Approval != null ) />
+                        </td>
+                        <td style="text-align:right">
+                            @if (cs.Mesh_200_Pct.HasValue)
+                            {
+                                @(cs.Mesh_200_Pct.GetValueOrDefault(0).ToString("N2"))
+                                <span>%</span>
+                            }
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value="cs.Mesh_325_Wgt" Format="N2" Disabled=@(LabData.ConcShift[cs.Shift_Nbr8 -1].Approval != null ) />
+                        </td>
+                        <td style="text-align:right">
+                            @if (cs.Mesh_325_Pct.HasValue)
+                            {
+                                @(cs.Mesh_325_Pct.GetValueOrDefault(0).ToString("N2"))
+                                <span>%</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </table>
+
+
+            <table id="LabTable2" class="LabTable">
+                <tr class="Header1">
+                    <td></td>
+                    <td colspan="7">Pellet Screen Structure</td>
+                </tr>
+                <tr class="Header2">
+                    <td rowspan="2">Sample Time</td>
+                    <td rowspan="2">Starting Weight</td>
+                    <td colspan="4">Cumulative Weight</td>
+                    <td colspan="2">Cumulative Weight %</td>
+                </tr>
+                <tr class="Header2">
+                    <td>+ <sup>1</sup>&frasl;<sub>2</sub> Inch</td>
+                    <td>+ <sup>7</sup>&frasl;<sub>16</sub> Inch</td>
+                    <td>+ <sup>3</sup>&frasl;<sub>8</sub> Inch</td>
+                    <td>+ <sup>1</sup>&frasl;<sub>4</sub> Inch</td>
+                    <td>+ <sup>1</sup>&frasl;<sub>2</sub> Inch</td>
+                    <td>+ <sup>1</sup>&frasl;<sub>4</sub> Inch</td>
+                </tr>
+
+                @foreach (var pl in LabData.PelletLab)
+                {
+                    <tr class='@("Half" + pl.Half.ToString())'>
+                        <td class="Header2">
+                            @pl.SampleTime.ToString("h tt")
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.Bt_StartingWeight Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.Bt_12 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.Bt_716 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.Bt_38 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.Bt_14 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td id="tdScreen12Pct1" class="CalcField">
+                            @pl.Bt_Plus12Pct?.ToString("N1")
+                        </td>
+                        <td id="tdScreen14Pct1" class="CalcField">
+                            @pl.Bt_Plus14Pct?.ToString("N1")
+                        </td>
+                    </tr>
+                }
+            </table>
+
+            <table id="LabTable3" class="LabTable">
+                <tr class="Header1">
+                    <td></td>
+                    <td colspan="9">Pellet Tumble</td>
+                </tr>
+                <tr class="Header2">
+                    <td rowspan="2">Sample Time</td>
+                    <td rowspan="2">Starting Weight</td>
+                    <td colspan="5">Cumulative Weight</td>
+                    <td colspan="2">Cumulative Weight %</td>
+                </tr>
+                <tr class="Header2">
+                    <td>+ <sup>1</sup>&frasl;<sub>2</sub> Inch</td>
+                    <td>+ <sup>7</sup>&frasl;<sub>16</sub> Inch</td>
+                    <td>+ <sup>3</sup>&frasl;<sub>8</sub> Inch</td>
+                    <td>+ <sup>1</sup>&frasl;<sub>4</sub> Inch</td>
+                    <td>+ 30 Mesh</td>
+                    <td>+ <sup>1</sup>&frasl;<sub>4</sub> Inch</td>
+                    <td>- 30 Mesh</td>
+                </tr>
+
+                @foreach (var pl in LabData.PelletLab)
+                {
+                    <tr class='@("Half" + pl.Half.ToString())'>
+                        <td class="Header2">
+                            @pl.SampleTime.ToString("h tt")
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_StartingWeight Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_12 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_716 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_38 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_14 Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.At_30Mesh Format="N0" Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td id="tdScreen12Pct1" class="CalcField">
+                            @pl.At_Plus14Pct?.ToString("N1")
+                        </td>
+                        <td id="tdScreen14Pct1" class="CalcField">
+                            @pl.At_Minus30MeshPct?.ToString("N1")
+                        </td>
+                    </tr>
+                }
+
+            </table>
+            <table id="LabTable4" class="LabTable">
+                <tr>
+                    <td rowspan="2" class="Header2">Sample Time</td>
+                    <td colspan="3" class="Header1">Pellet Compression</td>
+                    <td rowspan="2" class="Header2">Percent Magnetic Pellets</td>
+                    <td colspan="6" class="Header1">X-Ray Pellet Analysis</td>
+                    <td rowspan="2" class="Header2">Pellet Moisture</td>
+                    <td rowspan="2" class="Header2">Pellet Ferrous</td>
+                </tr>
+
+                <tr class="Header2">
+                    <td>
+                        Pounds
+                    </td>
+                    <td>
+                        % &lt; 300
+                    </td>
+                    <td>
+                        % &lt; 200
+                    </td>
+                    <td>
+                        Fe
+                    </td>
+                    <td>SiO<sub>2</sub></td>
+                    <td>CaO</td>
+                    <td>Al<sub>2</sub>O<sub>3</sub></td>
+                    <td>Mn</td>
+                    <td>MgO</td>
+                </tr>
+
+                @foreach (var pl in LabData.PelletLab)
+                {
+                    <tr class='@("Half" + pl.Half.ToString())'>
+                        <td class="Header2">
+                            @pl.SampleTime.ToString("h tt")
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.CompressionLbs Disabled=@(pl.Approval != null || pl.DefaultsUsed) TextAlign="TextAlign.Right" />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.CompLess300 Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.CompLess200 Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PctMagPell Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellFe Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellSiO2 Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellCao Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellAl2O3 Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellMn Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellMgO Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellMoisture Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                        <td>
+                            <RadzenNumeric ShowUpDown="false" @bind-Value=@pl.PellFerrous Disabled=@(pl.Approval != null || pl.DefaultsUsed) />
+                        </td>
+                    </tr>
+                }
+            </table>
+
+        </div>
+    </div>
+    <div class="col-3">
+        <div class="row mb-1">
+            <div class="col-12">
+                <span style="font-weight:bold">Date:</span>
+                <RadzenDatePicker @bind-Value=@SelectedLabDate DateFormat="d" Change="SelectedDateChangedAsync" />
+            </div>
+        </div>
+        <div id="divApproval">
+            <div id="ApprovalTitle">
+                Lab Data Approval
+            </div>
+            <table>
+                <tr>
+                    <th>Shift</th>
+                    <th>Half</th>
+                    <th>Defaults</th>
+                    <th></th>
+                </tr>
+                @foreach (DAL.Models.KTCLab.PelletLab pl in LabData.PelletLab)
+                {
+                    <tr>
+                        @if (pl.Half % 2 == 1)
+                        {
+                            <td rowspan="2">@pl.Shift</td>
+                        }
+                        <td>@pl.Half</td>
+                        <td>
+                            <RadzenCheckBox @bind-Value=@pl.DefaultsUsed Name="chkDefaults" TValue="bool" Change=@(args => SetDefaults(args, pl)) Disabled=@(pl.Approval != null) />
+                        </td>
+                        <td>
+                            <CascadingAuthenticationState>
+                                @if (pl.Approval != null)
+                                {
+                                    <span class="ApprovedLabel">Approved</span>
+                                    <AuthorizeView Roles="Admin,BSC_Admin,LabDatApvl">
+                                        <Authorized>
+                                            <RadzenButton BusyText="Working ..." IsBusy=@IsApproving Click=@(async() => await RemoveApproveBtnClickAsync(pl)) Text="Remove" title="Remove Approval" ButtonStyle="ButtonStyle.Warning" />
+                                        </Authorized>
+                                    </AuthorizeView>
+
+                                }
+                                else
+                                {
+                                    <AuthorizeView Roles="Admin,BSC_Admin,LabDatApvl">
+                                        <Authorized>
+                                            <RadzenButton BusyText="Working ..." IsBusy=@IsApproving Click=@(async() => await ApproveBtnClickAsync(pl)) Text="Approve" ButtonStyle="ButtonStyle.Secondary" />
+                                        </Authorized>
+                                    </AuthorizeView>
+                                }
+                            </CascadingAuthenticationState>
+                        </td>
+                    </tr>
+                }
+            </table>
+            <div style="text-align:center;margin:5px 0px 5px 0px">
+                <RadzenButton style="width: 160px" Icon="save" BusyText="Saving ..." IsBusy=@IsSaving Click=@SaveButtonClickAsync Text="Save" ButtonStyle="ButtonStyle.Primary" />
+            </div>
+        </div>
+
+        <div id="divConcTons">
+            <div id="ConcTonsTitle">
+                Concentrate Tons
+            </div>
+            <table>
+                <tr>
+                    <th>Shift</th>
+                    <th>Tons</th>
+                </tr>
+                @foreach (var cs in WH_ConcShift)
+                {
+                    <tr>
+                        <td>@cs.Shift</td>
+                        <td>@cs.Concentrate_Slurry_Gt?.ToString("N0") </td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+
+        <div id="divPelTons">
+            <div id="PelTonsTitle">
+                Pellet Tons
+            </div>
+            <table>
+                <tr>
+                    <th>Shift</th>
+                    <th>Half</th>
+                    <th>Tons</th>
+
+                </tr>
+                @foreach (var pell in WH_KPell)
+                {
+                    <tr>
+                        @if (pell.Half % 2 == 1)
+                        {
+                            <td rowspan="2">@pell.Shift</td>
+                        }
+                        <td>@pell.Half</td>
+                        <td> @pell.Pellet_Tons_Dry_Gt?.ToString("N0")</td>
+
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    private DateTime SelectedLabDate = DateTime.Today;
+    private DAL.Models.KTCLab.KTC_Lab LabData = new();
+
+    /// <summary>
+    /// The id for the Conc Screen from Lab_Phys_Type table
+    /// </summary>
+    private const int CONC_SCREEN_PHYS_ID = 12;
+    private List<MOO.DAL.ToLive.Models.Lab_Phys_Analysis> ConcScreen = [];
+
+    private List<MOO.DAL.Warehouse.Models.K_Conc_Shift> WH_ConcShift = new();
+    private List<MOO.DAL.Warehouse.Models.K_Pell_Ind_Line_Half> WH_KPell = new();
+
+    /// <summary>
+    /// indicator for when the data list saving asnychronously
+    /// </summary>
+    private bool IsSaving = false;
+
+    private bool IsApproving = false;
+    protected override void OnInitialized()
+    {
+        if (MOO.Settings.ServerType == MOO.Settings.ServerClass.Development)
+            SelectedLabDate = DateTime.Parse("1/1/2018");  //Set this to some date in the past for testing on dev.
+
+        //can't do an await on this as the above layout is dependent on lists being filled
+        LabData = DAL.Services.KTCLab.KTC_LabSvc.Get(SelectedLabDate);
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await LoadData();
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadData()
+    {
+        WH_ConcShift = await Task.Run(() => MOO.DAL.Warehouse.Services.K_Conc_ShiftSvc.GetAll(SelectedLabDate, SelectedLabDate));
+        WH_KPell = await Task.Run(() => MOO.DAL.Warehouse.Services.K_Pell_Ind_Line_HalfSvc.GetAll(SelectedLabDate, SelectedLabDate));
+
+        ConcScreen = await Task.Run(() => ToLive.Services.Lab_Phys_AnalysisSvc.GetByShiftDate(CONC_SCREEN_PHYS_ID, 
+                                                        SelectedLabDate, SelectedLabDate, ToLive.Enums.ShiftType.ShiftType8Hour).OrderBy(x => x.Analysis_Date).ToList());
+        //we should have 6 records for concscreen
+        if(ConcScreen.Count != 6)
+        {
+            //start with 11 pm and then go every 4 hours
+            DateTime labDate = SelectedLabDate.AddHours(-1);
+            for(int nCount = 0; nCount<=5; nCount++)
+            {
+                //first make sure we don't already have a record for that time
+                var findRec = ConcScreen.FirstOrDefault(x => x.Analysis_Date == labDate);
+                if(findRec is null)
+                {
+
+                    ToLive.Models.Lab_Phys_Analysis physRec = new()
+                        {
+                            Analysis_Date = labDate,
+                            Lab_Phys_Type = ToLive.Services.Lab_Phys_TypeSvc.Get(CONC_SCREEN_PHYS_ID)
+
+                        };
+
+                    //calculate the shift values for the record
+                    physRec.CalcShift8(MOO.Plant.Keetac);
+                    physRec.CalcShift12(MOO.Plant.Keetac, MOO.Area.Concentrator);
+                    ConcScreen.Add(physRec);
+                }
+
+                labDate = labDate.AddHours(4);
+
+            }
+        }
+
+
+        LabData = await Task.Run(() => DAL.Services.KTCLab.KTC_LabSvc.Get(SelectedLabDate));
+
+        StateHasChanged();
+    }
+    private async Task SelectedDateChangedAsync()
+    {
+        await LoadData();
+    }
+
+    private void SetDefaults(bool? value, DAL.Models.KTCLab.PelletLab pl)
+    {
+        if (value.HasValue && value.Value && pl.Approval == null)
+            DAL.Services.KTCLab.KTC_LabSvc.SetDefaults(pl);
+    }
+    private async Task SaveButtonClickAsync()
+    {
+
+        //check for zeros on conc screen start weight, if zero is entered, it causes a divide by zero.  A check constraint is in the DB to not allow a zero
+        foreach (var scrn in ConcScreen)
+        {
+            if(scrn.Start_Wgt == 0)
+            {
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Invalid Entry",
+                        Detail = "Start weight cannot be zero on Concentrate Screen",
+                        Duration = 10000
+                    });
+                return;
+            }
+        }
+
+        IsSaving = true;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string? usr = authState.User?.Identity?.Name;
+
+        //save each conc screen record
+        foreach(var cs in ConcScreen)
+        {
+            var recUpdated = await Task.Run(() => ToLive.Services.Lab_Phys_AnalysisSvc.Update(cs));
+            //if updated returned zero that means there was no record so insert now
+            if(recUpdated == 0)           
+                await Task.Run(() => ToLive.Services.Lab_Phys_AnalysisSvc.Insert(cs));
+        }
+
+        await Task.Run(() => DAL.Services.KTCLab.KTC_LabSvc.Save(LabData, usr));
+        IsSaving = false;
+    }
+
+    private async Task ApproveBtnClickAsync(DAL.Models.KTCLab.PelletLab pl)
+    {
+        IsApproving = true;
+        //validate before approving
+
+        bool IsValid = true;
+        if (!pl.Bt_StartingWeight.HasValue || !pl.Bt_12.HasValue || !pl.Bt_716.HasValue || !pl.Bt_38.HasValue || !pl.Bt_14.HasValue)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = "Missing Before Tumbles Data, cannot approve data.",
+                    Duration = 4000
+                });
+            IsValid = false;
+        }
+        if (!pl.At_StartingWeight.HasValue || !pl.At_12.HasValue || !pl.At_716.HasValue || !pl.At_38.HasValue || !pl.At_14.HasValue || !pl.At_30Mesh.HasValue)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = "Missing After Tumbles Data, cannot approve data.",
+                    Duration = 4000
+                });
+            IsValid = false;
+        }
+        if (!pl.CompressionLbs.HasValue || !pl.CompLess200.HasValue || !pl.CompLess300.HasValue || !pl.PctMagPell.HasValue || !pl.PellFe.HasValue ||
+                    !pl.PellSiO2.HasValue || !pl.PellCao.HasValue || !pl.PellMoisture.HasValue || !pl.PellFerrous.HasValue)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Entry",
+                    Detail = "Missing Pellet Data.",
+                    Duration = 4000
+                });
+            IsValid = false;
+        }
+
+
+        if (IsValid)
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            string? usr = authState.User?.Identity?.Name;
+            //save before approving
+            await Task.Run(() => DAL.Services.KTCLab.KTC_LabSvc.Save(LabData, usr));
+            await Task.Run(() => DAL.Services.KTCLab.KTC_LabSvc.Approve(LabData, authState?.User?.Identity?.Name, pl.Shift_Date!.Value, pl.Shift!.Value, pl.Half!.Value));
+            //reload the data after approving
+            await LoadData();
+        }
+
+        IsApproving = false;
+    }
+
+    private async Task RemoveApproveBtnClickAsync(DAL.Models.KTCLab.PelletLab pl)
+    {
+        IsApproving = true;
+        await Task.Run(() => DAL.Services.ApprovalSvc.RemoveApproval(pl.Approval.Approval_Id));
+        await LoadData();
+        IsApproving = false;
+    }
+
+}

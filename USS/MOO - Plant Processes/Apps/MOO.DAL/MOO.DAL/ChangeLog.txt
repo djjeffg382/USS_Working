@@ -1,0 +1,57 @@
+﻿6.0.334
+	Added cad_drawings
+
+6.0.7
+	Fixed Null value problem in Pulse_analog_Check
+
+6.0.6
+	Fixed Division by zero in Pulse_analog_Check
+
+6.0.5
+	Added PITotal, PiAggregate, and PiAggregateSvc
+	Added Pulse_Analog_Check and Pulse_Analog_CheckSvc
+	Added another get function to DVFE_Header to get by date and area
+
+6.0.4
+	PI Snapshot additions for DigitalState, String, and Datetime values.
+
+6.0.3 
+	Added PI Snapshot
+
+6.0.2
+	-Minor DVFE Fixes
+
+6.0.1
+	Added DVFE_Header and DVFE_Agg_Detail
+
+6.0.0
+	Moved to .Net 6.0
+	Some fixes to Motor_* services/models
+
+5.0.6
+	Added InvalidDataEntered exception class that can be thrown on data validation
+	Added 
+		- Motor_Maintenance
+		- Motor_Change
+		- Motor_Test
+
+5.0.5
+	- Added required tag to fs_critique model
+5.0.4
+	- Added Fire Security Critique model/svc for new input form. table fs_critique
+5.0.3
+	- Added code to get and update sec_user.useroptions without get/update the whole object
+
+5.0.2 
+Added 
+	- Core.Metric_Value and core.metric_value_audit
+
+
+5.0.1		10/25/2021
+Added following tables (Models and services)
+	- Error
+	- Sec_Applicatin
+	- DVFE_Compliance
+
+5.0.0		10/20/2021		Altman
+	- Initial version

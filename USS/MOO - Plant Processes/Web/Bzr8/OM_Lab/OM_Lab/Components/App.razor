@@ -1,0 +1,56 @@
+﻿@inject NavigationManager NavMgr
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="@Path" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="OM_Lab.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.ico" />
+    <RadzenTheme Theme="default" @rendermode="InteractiveServer" />    
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+</body>
+
+</html>
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Inject]
+    private ThemeService? ThemeService { get; set; }
+
+    string Path = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (NavMgr.BaseUri.Contains("localhost", StringComparison.CurrentCultureIgnoreCase))
+            Path = "/";
+        else
+        {
+            //base path is case sensitive, for this reason we will pull this from the url and set the path based on the URL
+            //Example https://mno-dev-web.mno.uss.com/bzr/MTC_Conc/ will give a path of /bzr/MTC_Conc/
+            string baseUri = NavMgr.BaseUri;
+            Path = baseUri.Substring(baseUri.IndexOf("/", 10));  //start at character 10, this should get past https:// and get the first "/" after that
+        }
+        base.OnInitialized();
+
+        if (HttpContext != null)
+        {
+            var theme = HttpContext.Request.Cookies[Util.APP_THEME_NAME];
+
+            if (!string.IsNullOrEmpty(theme))
+            {
+                ThemeService!.SetTheme(theme, false);
+            }
+        }
+    }
+}

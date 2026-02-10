@@ -1,0 +1,52 @@
+﻿@inherits LayoutComponentBase
+@using Radzen.Blazor
+@inject CookieThemeService CookieThemeService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager UriHelper
+
+<RadzenComponents @rendermode="InteractiveServer" />
+
+<div class="page">
+
+    <div style="position:absolute;top:0px;left: 50%;transform: translate(-50%, 0%);text-align:center;z-index:9999;font-size:18pt;font-weight:bold">
+        <RadzenLabel>
+            @* SectionOutlet allows Pages to put the title here *@
+            <SectionOutlet SectionName="page-title" />
+        </RadzenLabel>
+    </div>
+
+    <RadzenLayout Style="width:100%" >
+        <SideBar/>
+        <RadzenBody>
+            <div class="rz-p-4">
+                @Body
+            </div>
+        </RadzenBody>
+    </RadzenLayout>
+
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+
+    protected async override Task OnInitializedAsync()
+    {
+        System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+
+
+        string userName = "";
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User != null)
+            userName = authState.User!.Identity!.Name!;
+        UriHelper.LocationChanged += (obj, lcea) =>
+        {
+            Log.ForContext("Context", "RazorRequest").ForContext("User", userName).Information(lcea.Location);
+        };
+        Log.ForContext("Context", "RazorRequest").ForContext("User", userName).Information(UriHelper.Uri.ToString());
+    }
+}

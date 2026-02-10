@@ -1,0 +1,116 @@
+﻿@page "/om_scalesvcreset"
+@rendermode InteractiveServer
+@using System.ServiceProcess
+@using System.Diagnostics
+@using OM_Lab.Data.Models
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_COOR")]
+
+
+<PageTitle>@Util.PROGRAM_TITLE - Scale Remote Service Restart</PageTitle>
+<SectionContent SectionName="page-title">SAI Scale Remote Service Reset</SectionContent>
+
+<p>
+    Use this to restart the remoting service on the SAI Scale computers if unable to connect.  
+</p>
+
+<RadzenCard class="m-3">
+    <div class="row mb-2">
+        <div class="col">
+            <RadzenButton Click="GetServerStatusAsync" Icon="refresh" ButtonStyle="ButtonStyle.Light" title="Refresh Statuses" />
+        </div>
+    </div>
+    <RadzenDataGrid AllowFiltering="true" FilterMode="FilterMode.Simple" AllowSorting="true"
+                    Data="@SvcList" TItem="OM_Lab.Data.Models.WinSvcInfo" LogicalFilterOperator="LogicalFilterOperator.Or"
+                    FilterDelay="3000" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    SelectionMode="DataGridSelectionMode.Single">
+        <Columns>
+            <RadzenDataGridColumn TItem="OM_Lab.Data.Models.WinSvcInfo" Property="ServerName" Title="Server Name" Width="200px" />
+            <RadzenDataGridColumn TItem="OM_Lab.Data.Models.WinSvcInfo" Property="ServiceName" Title="Service Name" />
+            <RadzenDataGridColumn TItem="OM_Lab.Data.Models.WinSvcInfo" Property="Status" Title="Status" />
+            <RadzenDataGridColumn TItem="OM_Lab.Data.Models.WinSvcInfo" Title="Reset">
+                <Template Context="data">
+                    <RadzenButton Click="@(async () => await ResetService(data))" Icon="restart_alt" ButtonStyle="ButtonStyle.Light"
+                                  title="Restart Service" BusyText="Restarting ..." IsBusy=@data.IsRestarting />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+
+@code {
+
+    private List<OM_Lab.Data.Models.WinSvcInfo> SvcList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        CreateServerList();
+        await GetServerStatusAsync();
+        await base.OnInitializedAsync();
+    }
+
+    private void CreateServerList()
+    {
+        SvcList.Add(new OM_Lab.Data.Models.WinSvcInfo() { ServerName = "MTC-SAI-E.mno.uss.com", ServiceName = "Configuration Manager Remote Control" });
+        SvcList.Add(new OM_Lab.Data.Models.WinSvcInfo() { ServerName = "MTC-SAI-W.mno.uss.com", ServiceName = "Configuration Manager Remote Control" });
+
+        //This unfortunately stopped working once Network Segmentation happened
+        // SvcList.Add(new OM_Lab.Data.Models.WinSvcInfo() { ServerName = "MNO-JOBS.mno.uss.com", ServiceName = "MNO_TumblesSerialPort_SVC" });
+    }
+
+
+    private async Task GetServerStatusAsync()
+    {
+        foreach (var svc in SvcList)
+        {
+            try
+            {
+                ServiceController sc = new(svc.ServiceName, svc.ServerName);
+                svc.Status = await Task.Run(() => sc.Status.ToString());
+            }
+            catch (Exception ex)
+            {
+                svc.Status = ex.Message;
+            }
+        }
+    }
+    private async Task ResetService(OM_Lab.Data.Models.WinSvcInfo svc)
+    {
+        svc.IsRestarting = true;
+        try
+        {
+            ServiceController sc = new(svc.ServiceName, svc.ServerName);
+            //stop the service
+            if (sc.Status != ServiceControllerStatus.Stopped)
+            {
+                svc.Status = "Stopping Service";
+                sc.Stop();
+                while (sc.Status != ServiceControllerStatus.Stopped)
+                {
+                    await Task.Delay(5000);
+                    await Task.Run(() => sc.Refresh());
+                    svc.Status = sc.Status.ToString();
+                }
+            }
+            //start service
+            svc.Status = "Starting Service";
+            StateHasChanged();
+            //wait one second before starting
+            await Task.Delay(2000);
+            sc.Start();
+            while (sc.Status != ServiceControllerStatus.Running)
+            {
+                await Task.Delay(500);
+                await Task.Run(() => sc.Refresh());
+                svc.Status = sc.Status.ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            svc.Status = ex.Message;
+        }
+        svc.IsRestarting = false;
+
+    }
+}

@@ -1,0 +1,46 @@
+﻿ChangeLog Moved to IT_System_Log table
+
+1/27/2025
+	Updated Sec Request links on home page
+
+1/22/2025 - Altman
+	Updated MOO.DAL to fix 4 hour conc fe and sio2 values not getting approval id's
+	Changed oil and water results pages to use AfterRender instead of Init to improve performance
+	Add KTC Quality Minntac samples page but not showing in NavMenu yet.
+11/19/2024 - Altman
+	Fix on Feed To Grate Calc page
+		Agg3 "Trucked Reclaim Balance" was labeled wrong for variable name
+		Agg3 Trucked Into Plant calc was using Trucked From West and should be using Trucked To West
+		Fixed spelleing on FTG Calc page Caluclation -> Calculation
+
+10/29/2024 - Altman
+	Added Sample Collected page to LIMS section
+	Updated Feed To Grate Calc page to show new calculation
+
+10/16/2024 Altman
+	Converted to new .Net 8 format
+	Upgraded Radzen to 5.x
+
+8/21/2024 Altman, Kayfes
+	Added DR Lab Entry Page
+	Modified KTC SAG Mill to use Lab_Phys_Analysis Table
+	Upgraded to Radzen 5, Complete rework of project
+	Added Crusher to Login Samples page
+
+5/6/2024 Altman 
+	Added PLO Specs Page
+	Added AL2O3, MgO, Mn to KTC Lab Entry for for Pellet XRF
+	Made new KTC Lab Entry available
+	Added KTC Sag Mill Page
+
+
+4/3/2024 Altman
+	Fixed Met Crush Plant insert error on month end
+	Updated NuGet Packages
+
+1/5/2024: Altman 
+	Changelog added
+	ReadMe Added
+	Converted to .Net 8.0 (Updated all NuGet packages to latest version and .Net 8.0)
+	Added SectionOutlet to MainLayout and then updated Page Titles
+	

@@ -1,0 +1,102 @@
+@page "/new-agglom-met-input"
+@inherits NewAgglomMetInputPage
+
+<RadzenCard Variant="Variant.Outlined" Style="max-width:1200px;margin:auto;background:black;color:white;">
+    <div style="font-family:monospace; font-size:2rem; text-align:center; letter-spacing:0.2em; margin-top:10px;">MINNTAC LABORATORY</div>
+    <div style="font-family:monospace; font-size:1.2rem; text-align:right; margin-top:10px; margin-bottom:30px;">@DateTime.Now.ToString("hh:mm tt")</div>
+    <div style="font-family:monospace; font-size:1.3rem; text-align:center; margin-bottom:30px;">sample date:
+        <RadzenButton Text=@($"{SelectedDate:MM-dd-yy}") Click="ShowDateDialog" Style="background:#222;color:#fff;border:1px solid #888;min-width:120px; margin-left:10px;" />
+    </div>
+    <div style="font-family:monospace; font-size:1.3rem; text-align:center; margin-bottom:30px;">shift:
+        <RadzenTextBox @bind-Value="Shift" Style="width:60px;background:#222;color:#fff;border:1px solid #888;text-align:center; margin-left:10px;" />
+    </div>
+    <div style="font-family:monospace; font-size:1.3rem; text-align:center; margin-bottom:30px;">half:
+        <RadzenTextBox @bind-Value="Half" Style="width:60px;background:#222;color:#fff;border:1px solid #888;text-align:center; margin-left:10px;" />
+    </div>
+
+    <!-- Data Entry Grid -->
+    <div style="margin-top:40px;">
+        <table style="width:100%; font-family:monospace; font-size:1.1rem; color:white; border-collapse:collapse;">
+            <tr style="border-bottom:2px solid #888;">
+                <th></th>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <th colspan="2" style="text-align:center;">LINE @line</th>
+                }
+            </tr>
+            <tr>
+                <td></td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td style="text-align:center;">Before</td>
+                    <td style="text-align:center;">After</td>
+                }
+            </tr>
+            @foreach (var sieve in SieveSizes)
+            {
+                <tr>
+                    <td>@sieve</td>
+                    @for (int line = 3; line <= 7; line++)
+                    {
+                        <td><RadzenTextBox @bind-Value="SieveValues[line][sieve].Before" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                        <td><RadzenTextBox @bind-Value="SieveValues[line][sieve].After" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                    }
+                </tr>
+            }
+        </table>
+    </div>
+    <!-- Summary Section -->
+    <div style="margin-top:30px;">
+        <table style="width:100%; font-family:monospace; font-size:1.1rem; color:white; border-collapse:collapse;">
+            <tr>
+                <th></th>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <th style="text-align:center;">LINE @line</th>
+                }
+            </tr>
+            <tr>
+                <td>Comp. Mean</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].CompMean" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+            <tr>
+                <td>%&lt;200</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].Pct200" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+            <tr>
+                <td>SiO2</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].SiO2" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+            <tr>
+                <td>Al2O3</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].Al2O3" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+            <tr>
+                <td>CaO</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].CaO" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+            <tr>
+                <td>MgO</td>
+                @for (int line = 3; line <= 7; line++)
+                {
+                    <td><RadzenTextBox @bind-Value="SummaryValues[line].MgO" Style="width:70px;background:#222;color:#fff;border:1px solid #888;text-align:right;" /></td>
+                }
+            </tr>
+        </table>
+    </div>
+</RadzenCard>

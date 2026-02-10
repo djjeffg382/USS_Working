@@ -1,0 +1,62 @@
+﻿@inject DialogService DialogService;
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@page "/counter"
+
+@*<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>*@
+
+@*<MOO.Blazor.Pages.Pulse_Analog_Check></MOO.Blazor.Pages.Pulse_Analog_Check>*@
+@*<MOO.Blazor.Components.EmailSubscription></MOO.Blazor.Components.EmailSubscription>*@
+
+@*<MOO.Blazor.Components.Scheduler GroupID="0" SchedName="Weekend Duty" AllowControls=true/>*@
+@*<MOO.Blazor.Components.Scheduler GroupID=0 SchedName=""/>*@
+
+ @*<MOO.Blazor.Components.HelpPageComponent AppName="\Mine\Markdown Setup" DisplayFileLocation=true EditMode=true Title="Markdown Setup"/>*@
+ @*<MOO.Blazor.Components.LogServerLinks ProgramName="bzr/IT_Admin" />*@
+
+
+
+<RadzenPanel AllowCollapse="true" Style="margin: 40px auto; max-height:600px; width: 100%" Collapsed="true">
+    <HeaderTemplate>
+        <h3 class="m-0 d-flex align-items-center">
+            Onboarding
+        </h3>
+    </HeaderTemplate>
+    <ChildContent>
+        <MOO.Blazor.Components.DocumentListView FileFolderLocation="\\mno-fs.mno.uss.com\ExternalData\MNOWeb\Onboarding" URLRoot="https://www.mno.uss.com/WebDocs/Onboarding" />
+    </ChildContent>
+</RadzenPanel>
+
+
+<MOO.Blazor.Components.DocumentListView FileFolderLocation="\\mno-fs.mno.uss.com\fs-root\Web\RCM\Weekly Maintenance Schedule\Minntac" 
+            URLRoot="http://www.mno.uss.com/WebDocs/RCM/Weekly%20Maintenance%20Schedule/Minntac" Style="max-height:500px;border:1px solid black"/>
+    
+ user = @userName
+ role = @isRole;
+@code {
+    private int currentCount = 0;
+    string userName = "";
+
+    bool isRole = false;
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User != null)
+            userName = authState.User!.Identity!.Name!;
+        isRole = authState.User!.IsInRole("test123");
+
+    }
+}

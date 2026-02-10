@@ -1,0 +1,79 @@
+﻿@using DAL = MOO.DAL.ToLive
+<h2>
+    Shift: @EditScn.Shift
+</h2>
+
+<div class="row d-inline mb-2">
+    <h4 class="d-inline">Screen Start Weight: </h4>
+    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Start_Wgt Format="0.0" style="width:70px" />
+</div>
+<table class='blueTable mt-2' style="width:320px">
+    <thead>
+        <tr>
+            <th>Size</th>
+            <th>Weight</th>
+            <th>Weight %</th>
+            <th>Cum % Pass</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_1_Inch Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_1_Inch = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_1_InchPct.HasValue?EditScn.Scn_1_InchPct.Value.ToString("N1"):"")</td>
+            <td>@(EditScn.Scn_1_Cumulative.HasValue?EditScn.Scn_1_Cumulative.Value.ToString("N1"):"")</td>
+        </tr>
+        <tr>
+            <td>3/4</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_3_4_Inch Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_3_4_Inch = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_3_4_InchPct.HasValue?EditScn.Scn_3_4_InchPct.Value.ToString("N1"):"")</td>
+            <td>@(EditScn.Scn_3_4_Cumulative.HasValue?EditScn.Scn_3_4_Cumulative.Value.ToString("N1"):"")</td>
+        </tr>
+        <tr>
+            <td>1/2</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_1_2_Inch Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_1_2_Inch = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_1_2_InchPct.HasValue?EditScn.Scn_1_2_InchPct.Value.ToString("N1"):"")</td>
+            <td>@(EditScn.Scn_1_2_Cumulative.HasValue?EditScn.Scn_1_2_Cumulative.Value.ToString("N1"):"")</td>
+        </tr>
+        <tr>
+            <td>1/4</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_1_4_Inch Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_1_4_Inch = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_1_4_InchPct.HasValue?EditScn.Scn_1_4_InchPct.Value.ToString("N1"):"")</td>
+            <td>@(EditScn.Scn_1_4_Cumulative.HasValue?EditScn.Scn_1_4_Cumulative.Value.ToString("N1"):"")</td>
+        </tr>
+        <tr>
+            <td>6M</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_6m Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_6m = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_6m_Pct.HasValue?EditScn.Scn_6m_Pct.Value.ToString("N1"):"")</td>
+            <td>@(EditScn.Scn_6m_Cumulative.HasValue?EditScn.Scn_6m_Cumulative.Value.ToString("N1"):"")</td>
+        </tr>
+        <tr>
+            <td>-6M</td>
+            <td><RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@EditScn.Scn_Minus_6m Format="0.0" style="width:70px" Change=@(async args => EditScn.Scn_Minus_6m = await TrimValue(args)) /></td>
+            <td>@(EditScn.Scn_Minus_6m_Pct.HasValue?EditScn.Scn_Minus_6m_Pct.Value.ToString("N1"):"")</td>
+            <td></td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>Total Weight</td>
+            <td style='@(EditScn.Start_Wgt == EditScn.CumulativeWeight?"":"color:red")'>@EditScn.CumulativeWeight</td>
+            <td colspan="2"></td>
+        </tr>
+    </tfoot>
+</table>
+@code {
+
+    [Parameter] public DAL.Models.Rmf_Screen EditScn { get; set; } = new();
+    [Parameter] public EventCallback ValuesChanged { get; set; }
+
+    private async Task<decimal?> TrimValue(decimal? val)
+    {
+        decimal? retVal = null;
+        if (val.HasValue)
+            retVal= Math.Floor(val.Value * 10) / 10;
+
+        await ValuesChanged.InvokeAsync();
+        return retVal;
+    }
+}

@@ -1,0 +1,327 @@
+﻿@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using MOO.Blazor.Models
+@using MOO.Enums.Extension
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@inject DialogService DialogService
+<style type="text/css">
+
+    .MooAnomolies tr {
+    height: 1px;
+    }
+
+    .MooAnomolies td {
+    font-size: .7rem;
+    height: inherit;
+    }
+
+    .MooAnomolies .SensorName {
+    font-size: .9rem;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    }
+
+    .MooAnomolies .Normal {
+    background-color: green;
+    }
+
+    .MooAnomolies .SensorMissing {
+    background-color: #bac429;
+    }
+
+    .MooAnomolies .FlatLined, .MooAnomolies .OutOfBounds, .MooAnomolies .ShiftInMean, .MooAnomolies .LinearResidual {
+    background-color: #00B0F0;
+    }
+
+    .MooAnomolies .Saturated {
+    background-color: #e06100;
+    }
+
+    .MooAnomolies .LineDown {
+    background-color: grey;
+    }
+
+    .MooAnomolies .SensorValue div {
+    color: black;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+</style>
+
+
+
+@if (RefreshingData)
+{
+            <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Large">
+                <Template>Loading Anomalies</Template>
+            </RadzenProgressBarCircular>
+}
+else
+{
+            <table class="MooAnomolies" style="@Style">
+                <thead>
+                    <tr>
+                        <th style=@($"width:{ (ColumnWidths.Length>=1 ? ColumnWidths[0].ToString() : 200)}px")>@SensorTitle</th>
+                @{
+                    short idx = 0;
+                }
+                @foreach (var lineNbr in LineNumbers)
+                {
+                    idx++;
+                    short lineNo = lineNbr;
+                                    <th style=@($"width:{ (ColumnWidths.Length>idx? ColumnWidths[idx].ToString() : 150)}px;font-weight:bold;text-align:center")>
+                        @if (lineNo > 0)
+                        {
+                                                    <span>Line @lineNo</span>
+                        }
+                                    </th>
+                }
+                    </tr>
+                </thead>
+                <tbody>
+            @foreach (var anomSensor in AnomSensorList)
+            {
+                                <tr>
+                                    <td class="SensorName" style="cursor:pointer;" @onclick="@(async () => await SensorCellClick(@anomSensor.Sensor, null))">
+                        @anomSensor.Sensor
+                                    </td>
+                    @foreach (var lineNbr in LineNumbers)
+                    {
+                        short lineNo = lineNbr;
+                                                <td class="SensorValue" style="cursor:pointer;text-align:center" @onclick="@(() => SensorCellClick(@anomSensor.Sensor, lineNo))">
+                            @GetAnomalyTD(anomSensor.Sensor, lineNo)
+                                                </td>
+                    }
+
+                                </tr>
+            }
+                </tbody>
+            </table>
+}
+
+
+@code {
+
+    #region "Parameters"
+    /// <summary>
+    /// Plant
+    /// </summary>
+    [Parameter]
+    public MOO.Plant Plant { get; set; }
+
+    /// <summary>
+    /// Location
+    /// </summary>
+    [Parameter]
+    public string Location { get; set; } = "";
+
+    /// <summary>
+    /// number of status counts in a day to consider the anomaly flag for that day
+    /// </summary>
+    [Parameter]
+    public short MinDayCountAnomalies { get; set; } = 4;
+
+
+    /// <summary>
+    /// Style attribute of the html table
+    /// </summary>
+    [Parameter]
+    public string Style { get; set; } = "";
+
+
+    /// <summary>
+    /// Will be shown in the left most cell in the header row of the anomalies table
+    /// </summary>
+    [Parameter]
+    public string SensorTitle { get; set; } = "Sensor";
+
+
+    /// <summary>
+    /// Location of the Anomaly detail html files that will be associated with the clicked on Anomaly.
+    /// This will look for an html file of the same name as the sensor (all lowercase and underscore instead of spaces)
+    /// </summary>
+    [Parameter]
+    public string AnomDetailHtmlLocation { get; set; } = string.Empty;
+
+
+    /// <summary>
+    /// Used to define the width of the columns if desired, otherwise it will auto determine width
+    /// </summary>
+    [Parameter]
+    public short[] ColumnWidths { get; set; } = [];
+
+    #endregion
+
+    /// <summary>
+    /// Anomalies Data from dataabse
+    /// </summary>
+    private List<DAL.Models.Anomalies> AnomData = new();
+
+    private List<AnomSensor> AnomSensorList = new();
+
+    /// <summary>
+    /// List that will be used for the detail grid (second grid)
+    /// </summary>
+    private List<AnomLineDate> AnomLineDateList = new();
+
+    /// <summary>
+    /// Indicates data is refreshing
+    /// </summary>
+    private bool RefreshingData = false;
+
+    /// <summary>
+    /// Enumerable list of all possible line numbers in the dataset
+    /// </summary>
+    private IEnumerable<short> LineNumbers = [];
+
+
+
+
+    private class AnomSensor
+    {
+        public string Sensor { get; set; } = "";
+        public short MinLine { get; set; } = 0;
+        public short MaxLine { get; set; } = 0;
+        public short LineCount => (short)(MaxLine - MinLine + 1);
+    }
+
+
+
+    private DateTime[] DatesToShowInDetailTable = new DateTime[0];
+
+    //// <summary>
+    /// Class that will be used for the second grid
+    /// </summary>
+    private class AnomLineDate
+    {
+        public short Line { get; set; }
+        public string Sensor { get; set; } = "";
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender)
+        {
+            await RefreshDataAsync();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+
+    public async Task RefreshDataAsync()
+    {
+        LineNumbers = [];
+        RefreshingData = true;
+        AnomData = await Task.Run(() => DAL.Services.AnomaliesSvc.GetLatestValues(24, Plant, Location));
+        if (AnomData.Count > 0)
+        {
+            AnomSensorList = (from anom in AnomData
+                              group anom by anom.Sensor into g
+                              select new AnomSensor()
+                                  {
+                                      Sensor = g.First().Sensor,
+                                      MinLine = g.Min(x => x.Line),
+                                      MaxLine = g.Max(x => x.Line)
+
+                                  }).OrderBy(x => x.LineCount).ThenBy(x => x.Sensor).ToList();
+            LineNumbers = AnomData.Select(x => x.Line).Distinct().OrderBy(line => line);
+        }
+
+        RefreshingData = false;
+        StateHasChanged();
+    }
+
+    private MarkupString GetAnomalyTD(string Sensor, short Line)
+    {
+        StringBuilder sb = new();
+        var anomLineData = AnomData.FindAll(x => x.Sensor == Sensor && x.Line == Line);
+        if (anomLineData.Count > 0)
+        {
+            //we now need to determine the flag we will show as an aggregate for the day
+            //initialize this to the latest value so that if we don't have enough count, then we just show latest
+            DAL.Enums.AnomalyFlag flagDayValue = anomLineData.OrderByDescending(x => x.Tag_Time).ToList()[0].Flag;
+            var grp = (from anom in anomLineData
+                       group anom by anom.Flag into g
+                       select new
+                       {
+                           Flag = g.First().Flag,
+                           Count = g.Count()
+                       }).OrderByDescending(x => x.Flag).ToList();
+
+            //order by flag to get the most critical
+            //then loop through to find the most critical with a count
+            foreach (var anomGrp in grp)
+            {
+                if (anomGrp.Count >= MinDayCountAnomalies)
+                {
+                    flagDayValue = anomGrp.Flag;
+                    break;
+                }
+            }
+
+
+
+            string value = "";
+
+            if (flagDayValue != DAL.Enums.AnomalyFlag.Normal)
+                value = flagDayValue.GetDisplay()?.Name ?? flagDayValue.ToString();  //don't show any text for "Normal" flag
+
+
+            sb.Append($"<div class='{flagDayValue.ToString()}'>");
+            if (flagDayValue == DAL.Enums.AnomalyFlag.Normal)
+                sb.Append("&nbsp;");
+            else
+                sb.Append(value);
+            sb.Append("</div>");
+        }
+        else
+            sb.AppendLine(""); //no data
+
+        return (MarkupString)(sb.ToString());
+    }
+
+
+    private async Task SensorCellClick(string SensorName, int? Line)
+    {
+
+        //need to figure out the column number
+        List<DAL.Models.Anomalies> data = new();
+        if (!Line.HasValue)
+        {
+            //user clicked on the Label column
+            //show all lines for this sensor
+            data = AnomData.FindAll(x => x.Sensor == SensorName);
+        }
+        else
+        {
+            //show just the line selected
+            data = AnomData.FindAll(x => x.Sensor == SensorName && x.Line == Line);
+        }
+
+
+
+        string html = "";
+
+        string filename = AnomDetailHtmlLocation + SensorName.Replace(" ", "_").ToLower() + ".html";
+        if (System.IO.File.Exists(filename))
+            html = await System.IO.File.ReadAllTextAsync(filename);
+
+
+        await DialogService.OpenAsync<Components.Dialogs.AnomaliesDialog>($"Anomalies View - {SensorName}",
+         new Dictionary<string, object>() { { "AnomData", data }, { "AnomHtml", html } },
+         new DialogOptions() { Width = "1200px", Height = "600px", Resizable = true, Draggable = true, CloseDialogOnOverlayClick = true });
+
+
+    }
+
+
+}

@@ -1,0 +1,125 @@
+﻿@page "/om_plospecs"
+@rendermode InteractiveServer
+@using System.ServiceProcess
+@using System.Diagnostics
+@using OM_Lab.Data.Models
+@using DAL = MOO.DAL.ToLive
+@inject Radzen.DialogService dialogService
+@attribute [Authorize(Roles = "Admin,M_OM_MGR")]
+
+
+
+<PageTitle>@Util.PROGRAM_TITLE - PLO Specs</PageTitle>
+<SectionContent SectionName="page-title">PLO Specs</SectionContent>
+
+
+<RadzenCard class="m-3">
+    <div class="row mb-2">
+        <div class="col">
+            <RadzenButton Click="AddBtnClickAsync" Icon="add" ButtonStyle="ButtonStyle.Light" title="Add PLO Spec" />
+            <RadzenButton Click="EditBtnClickAsync" Icon="edit" ButtonStyle="ButtonStyle.Light" title="Edit Selected PLO Spec" />
+            <RadzenButton Click="CopyBtnClickAsync" Icon="content_copy" ButtonStyle="ButtonStyle.Light" title="Copy Selected Spec Into New" />
+        </div>
+    </div>
+
+
+    <RadzenDataGrid AllowFiltering="true" FilterMode="FilterMode.Simple" AllowSorting="true"
+                    Data="@SpecList" TItem="DAL.Models.PLO_Pellet_Spec" LogicalFilterOperator="LogicalFilterOperator.Or"
+                    FilterDelay="3000" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    SelectionMode="DataGridSelectionMode.Single" @bind-Value=SelectedSpec>
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec" Property="Start_Date" Title="Start Date" Width="150px" FormatString="{0:MM/dd/yyyy HH:mm}" />
+            <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec" Property="End_Date" Title="End Date" Width="150px" FormatString="{0:MM/dd/yyyy HH:mm}" />
+            <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec" Property="Product.Product_Name" Title="Product" />
+            <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec" Property="Modified_Date" Title="Modified Date" Width="150px" FormatString="{0:MM/dd/yyyy HH:mm}" />
+            <RadzenDataGridColumn TItem="DAL.Models.PLO_Pellet_Spec" Property="Modified_By" Title="Modified By" />
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+
+@code {
+    private List<DAL.Models.PLO_Pellet_Spec> SpecList = [];
+    private IList<DAL.Models.PLO_Pellet_Spec> SelectedSpec = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetDataAsync();
+    }
+    private async Task GetDataAsync()
+    {
+        SpecList = await Task.Run(() => DAL.Services.PLO_Pellet_SpecSvc.GetAll());
+    }
+
+    private async Task EditBtnClickAsync()
+    {
+
+        if (SelectedSpec.Count > 0)
+        {
+            var pellSpecValues = await Task.Run(() => DAL.Services.PLO_Pellet_Spec_ValuesSvc.GetByPelletSpec(SelectedSpec[0].Plo_Pellet_Spec_Id).OrderBy(x => x.Sort_Order).ToList());
+
+            await dialogService.OpenAsync<Dialogs.AddEditPLOSpec>("Edit PLO Specification",
+                   new Dictionary<string, object>() { { "PellSpec", SelectedSpec[0] }, { "PellSpecValues", pellSpecValues } },
+                   new DialogOptions() { Width = "1200px", Height = "750px", Resizable = false, Draggable = true });
+        }
+
+
+
+        await GetDataAsync();
+    }
+
+
+    private async Task CopyBtnClickAsync()
+    {
+
+        if (SelectedSpec.Count > 0)
+        {
+            string serialized = Newtonsoft.Json.JsonConvert.SerializeObject(SelectedSpec[0]);
+            var copied = Newtonsoft.Json.JsonConvert.DeserializeObject<DAL.Models.PLO_Pellet_Spec>(serialized);
+
+            if(copied != null)
+            {
+                copied.Plo_Pellet_Spec_Id = 0; //set this to zero so we know this is an insert
+
+                var copyFromSpecValues = await Task.Run(() => DAL.Services.PLO_Pellet_Spec_ValuesSvc.GetByPelletSpec(SelectedSpec[0].Plo_Pellet_Spec_Id).OrderBy(x => x.Sort_Order).ToList());
+                serialized = Newtonsoft.Json.JsonConvert.SerializeObject(copyFromSpecValues);
+                var copyToSpecValues = Newtonsoft.Json.JsonConvert.DeserializeObject<List<DAL.Models.PLO_Pellet_Spec_Values>>(serialized);
+                if (copyToSpecValues != null)
+                {
+                    foreach (var spec in copyToSpecValues)
+                    {
+                        spec.Plo_Pellet_Spec = copied;
+                        spec.Plo_Pellet_Spec_Values_Id = 0; //set this to zero so we know this is an insert
+                    }
+
+                    await dialogService.OpenAsync<Dialogs.AddEditPLOSpec>("Edit PLO Specification",
+                           new Dictionary<string, object>() { { "PellSpec", copied }, { "PellSpecValues", copyToSpecValues } },
+                           new DialogOptions() { Width = "1200px", Height = "750px", Resizable = false, Draggable = true });
+                }
+                
+            }
+
+
+        }
+
+
+        await GetDataAsync();
+    }
+
+
+
+
+    private async Task AddBtnClickAsync()
+    {
+        var pellSpec = new DAL.Models.PLO_Pellet_Spec();
+        var pellSpecValues = DAL.Services.PLO_Pellet_Spec_ValuesSvc.GetNewSpecs(pellSpec).OrderBy(x => x.Sort_Order).ToList();
+
+        await dialogService.OpenAsync<Dialogs.AddEditPLOSpec>("Add PLO Specification",
+               new Dictionary<string, object>() { { "PellSpec", pellSpec }, { "PellSpecValues", pellSpecValues } },
+               new DialogOptions() { Width = "1200px", Height = "750px", Resizable = false, Draggable = true });
+
+        await GetDataAsync();
+    }
+
+}

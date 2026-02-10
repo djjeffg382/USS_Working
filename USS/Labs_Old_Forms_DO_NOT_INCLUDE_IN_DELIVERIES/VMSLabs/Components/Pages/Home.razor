@@ -1,0 +1,32 @@
+﻿@page "/"
+@inherits HomePage
+
+<PageTitle>Home</PageTitle>
+
+<RadzenRow>
+    <RadzenColumn Width="6">
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="METINPUT" Style="width:100%;" Click="@(() => NavigateTo("/metinput"))" />
+        </RadzenCard>
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="ATTFC (PRINTS ONLY)" Style="width:100%;" Click="@(() => NavigateTo("/attfc"))" />
+        </RadzenCard>
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="INPUT OR DISPLAY DAVIS TUBE RESULTS" Style="width:100%;" Click="@(() => NavigateTo("/davis-tube"))" />
+        </RadzenCard>
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="NEW AGGLOM MET INPUT" Style="width:100%;" Click="@(() => NavigateTo("/new-agglom-met-input"))" />
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Width="6">
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="COMPRESSION TEST DATA" Style="width:100%;" Click="@(() => NavigateTo("/compression-test"))" />
+        </RadzenCard>
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="FILTER CAKES" Style="width:100%;" Click="@(() => NavigateTo("/filter-cakes"))" />
+        </RadzenCard>
+        <RadzenCard Variant="Variant.Outlined" Style="margin-bottom:10px;">
+            <RadzenButton Text="CHECK COMPS" Style="width:100%;" Click="@(() => NavigateTo("/check-comps"))" />
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>

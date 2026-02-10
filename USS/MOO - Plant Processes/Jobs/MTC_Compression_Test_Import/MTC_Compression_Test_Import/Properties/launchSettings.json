@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MTC_Compression_Test_Import": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

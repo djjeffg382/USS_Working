@@ -1,0 +1,5 @@
+﻿8.0.0 2/29/2024
+- Moved to .Net 8.0
+
+5.0.3		1/25/2021
+	- Fixed problem with not showing domain

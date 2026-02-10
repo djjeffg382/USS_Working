@@ -1,0 +1,122 @@
+﻿@page "/met_factor_values"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Oracle.ManagedDataAccess.Client
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Met Factor Values</PageTitle>
+<SectionContent SectionName="page-title">Met Data - Met Factor Values</SectionContent>
+<RadzenCard class="m-3">
+    <div class="row justify-content-start align-items-center">
+        <div>
+            <h3>Met Factor Type: </h3>
+            <RadzenDropDown AllowClear="false" TValue="DAL.Models.Met_Factor" style="width:200px"
+                            Data=@MetFactorList @bind-Value="SelectedFactor"
+                            Change="LoadGrid" TextProperty="Name" /><br />
+            @SelectedFactor.Description
+        </div>
+
+    </div>
+
+</RadzenCard>
+
+
+<RadzenCard class="m-3">
+    <div class="row mb-2">
+        <div class="col">
+            <RadzenButton Click="AddBtnClickedAsync" Icon="add_circle" ButtonStyle="ButtonStyle.Light" title="Add New Factor Value" />
+            <RadzenButton Click="EditBtnClickedAsync" Icon="edit" ButtonStyle="ButtonStyle.Light" title="Edit Selected Factor Value" />
+            <RadzenButton Click="DeleteBtnClickedAsync" Icon="delete" ButtonStyle="ButtonStyle.Light" title="Delete Selected Factor Value" />
+            <RadzenButton Click="LoadGrid" Icon="refresh" ButtonStyle="ButtonStyle.Light" title="Refresh Grid" />
+        </div>
+    </div>
+    <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="true" Data="@MFHistoryList"
+                    TItem="DAL.Models.Met_Factor_History" style="width:300px;height:500px" SelectionMode="DataGridSelectionMode.Single" @bind-Value=SelectedHistory>
+        <Columns>
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Factor_History" Property="Effective_Date" Title="Effective_Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="DAL.Models.Met_Factor_History" Property="Factor_Value" Title="Factor Value" />
+
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenCard>
+
+
+@code {
+    private List<DAL.Models.Met_Factor> MetFactorList = new();
+    private DAL.Models.Met_Factor SelectedFactor = new();
+    private IList<DAL.Models.Met_Factor_History> SelectedHistory = new List<DAL.Models.Met_Factor_History>();
+    private List<DAL.Models.Met_Factor_History> MFHistoryList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        MetFactorList = await Task.Run(() => DAL.Services.Met_FactorSvc.GetAll());
+        SelectedFactor = MetFactorList[0];
+        await LoadGrid();
+        await base.OnInitializedAsync();
+    }
+
+
+
+    private async Task LoadGrid()
+    {
+        MFHistoryList = await Task.Run(() => DAL.Services.Met_Factor_HistorySvc.GetAll(SelectedFactor.Factor_Id));
+    }
+
+
+
+    private async Task EditBtnClickedAsync()
+    {
+
+        if (SelectedHistory.Count == 1)
+        {
+
+            await dialogService.OpenAsync<Dialogs.AddEditMetFactorHist>("Edit Metric Factor",
+                   new Dictionary<string, object>() { { "EditFactorHist", SelectedHistory[0] }, { "IsInsert", false } },
+                   new DialogOptions() { Width = "400px", Height = "350px", Resizable = false, Draggable = true });
+
+            await LoadGrid();
+
+        }
+
+    }
+
+    private async Task AddBtnClickedAsync()
+    {
+
+        DAL.Models.Met_Factor_History newHist = new()
+            {
+                Met_Factor = SelectedFactor,
+                Effective_Date = DateTime.Today
+            };
+
+
+        await dialogService.OpenAsync<Dialogs.AddEditMetFactorHist>("Add Metric Factor",
+                   new Dictionary<string, object>() { { "EditFactorHist", newHist }, { "IsInsert", true } },
+                   new DialogOptions() { Width = "400px", Height = "350px", Resizable = false, Draggable = true });
+
+        await LoadGrid();
+
+    }
+
+    async Task DeleteBtnClickedAsync()
+    {
+
+        if (SelectedHistory.Count == 1)
+        {
+            bool? result = await dialogService.Confirm("Are you sure?", $"Delete Factor {SelectedHistory[0].Effective_Date:MM/dd/yyyy}",
+                                new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+            if (result.GetValueOrDefault(false))
+                DAL.Services.Met_Factor_HistorySvc.Delete(SelectedHistory[0]);
+            await LoadGrid();
+        }
+    }
+
+
+}

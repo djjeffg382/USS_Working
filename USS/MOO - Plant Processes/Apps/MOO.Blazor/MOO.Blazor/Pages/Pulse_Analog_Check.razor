@@ -1,0 +1,82 @@
+﻿@using DAL = MOO.DAL.ToLive
+
+<div class="row mb-2">
+    <div class="col-3">
+        <h5>Area:</h5>
+        <RadzenDropDown AllowClear="false" Style="width:200px" Data="@areasList" @bind-Value="@Area" Change="UpdatePulseAnalogListAsync" TValue="DAL.Models.Pulse_Analog_Check.PACheckArea" />
+    </div> 
+    <div class="col-3">
+        <h5>Start Date:</h5>
+        <RadzenDatePicker @bind-Value=@StartDate ShowTime="true" ShowSeconds="false" ShowTimeOkButton="false" HoursStep="1" MinutesStep="5" DateFormat="MM/dd/yyyy HH:mm" Change="UpdatePulseAnalogListAsync" />
+    </div> 
+    <div class="col-3">
+        <h5>End Date:</h5>
+        <RadzenDatePicker @bind-Value=@EndDate ShowTime="true" ShowSeconds="false" ShowTimeOkButton="false" HoursStep="1" MinutesStep="5" DateFormat="MM/dd/yyyy HH:mm" Change="UpdatePulseAnalogListAsync" />
+    </div>
+</div>
+
+
+
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.SimpleWithMenu" AllowSorting="true" style="height:65vh;width:1100px" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                Data="@paList" TItem="DAL.Models.Pulse_Analog_Check" LogicalFilterOperator="LogicalFilterOperator.Or" IsLoading="Loading" @bind-Value="SelectedPA">
+    <Columns>
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="Description" Title="Description" />
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="Pulse_Point" Title="Pulse Point" Width="150px" />
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="PulseVal" Title="Pulse Value" FormatString="{0:N2}" Width="150px" Filterable="false" />
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="Analog_Point" Title="Analog Point" Width="150px" />
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="AnalogVal" Title="Analog Value" FormatString="{0:N2}" Width="150px" Filterable="false" />
+        <RadzenDataGridColumn TItem="DAL.Models.Pulse_Analog_Check" Property="ValueDifference" Title="% Difference" FormatString="{0:N2}" Width="150px">
+            <Template Context="data">
+                @if (data.ValueDifference > 10)
+                {
+                    <span style='color:red'>@data.ValueDifference</span>
+                }
+                else
+                {
+                    <span>@data.ValueDifference</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+
+
+    IEnumerable<DAL.Models.Pulse_Analog_Check.PACheckArea> areasList = Enum.GetValues(typeof(DAL.Models.Pulse_Analog_Check.PACheckArea)).Cast<DAL.Models.Pulse_Analog_Check.PACheckArea>();
+    private List<DAL.Models.Pulse_Analog_Check> paList = new();
+
+    private DateTime StartDate = DateTime.Now.AddHours(-2);
+    private DateTime EndDate = DateTime.Now;
+
+
+
+    //create a selection to bind the grid to, this will allow the user to click the row and it will be highlighted and allow them to read it easier
+    IList<DAL.Models.Pulse_Analog_Check> SelectedPA = new List<DAL.Models.Pulse_Analog_Check>();
+
+    private bool Loading;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await UpdatePulseAnalogListAsync();
+        await base.OnParametersSetAsync();
+    }
+
+    private DAL.Models.Pulse_Analog_Check.PACheckArea _area = DAL.Models.Pulse_Analog_Check.PACheckArea.Crusher;
+    [Parameter]
+    public DAL.Models.Pulse_Analog_Check.PACheckArea Area { get; set; }
+
+    private async Task UpdatePulseAnalogListAsync()
+    {
+        Loading = true;
+        StateHasChanged();
+        SelectedPA.Clear();
+        paList = new();
+        //paList =await Task.Run(() => DAL.Services.Pulse_Analog_CheckSvc.GetByArea(_area));
+        paList = await Task.Run(() => DAL.Services.Pulse_Analog_CheckSvc.GetByAreaWithPiValues(_area, StartDate, EndDate));
+        Loading = false;
+
+        StateHasChanged();
+    }
+
+}

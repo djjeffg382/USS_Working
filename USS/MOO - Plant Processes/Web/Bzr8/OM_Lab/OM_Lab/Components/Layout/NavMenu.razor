@@ -1,0 +1,119 @@
+﻿<RadzenPanelMenu Style="height:calc(100% - 20px)">
+    <CascadingAuthenticationState>
+
+
+        <RadzenPanelMenuItem Text="Home" Path="index" Icon="home"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="Links" Path="links" Icon="link"></RadzenPanelMenuItem>
+
+        <RadzenPanelMenuItem Text="Met Data">
+            <ChildContent>
+                <AuthorizeView Roles="Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="Agglomerator Tons" Path="met_agg_tons"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Factor Values" Path="met_factor_values"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Pellet Type Change" Path="met_pellet_type_change"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Crusher" Path="met_met_crush"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Conc Step 2" Path="met_met_conc2"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Conc Step 3" Path="met_met_conc3"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Agg Step 1/2" Path="met_met_agg2"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Agg Step 3" Path="met_met_agg3"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Agg Standards" Path="met_met_agg_standards"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Feed To Grate" Path="met_feed_to_grate"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Met Reports" Path="http://mno-reports/Reports/report/Minntac/Minntac%20Met%20Reports%20(Monthly)" Icon="article" Target="_blank"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+                <RadzenPanelMenuItem Text="Feed To Grate Calculator" Path="met_ftg_calc" Icon="calculate"></RadzenPanelMenuItem>
+            </ChildContent>
+        </RadzenPanelMenuItem>
+
+        <RadzenPanelMenuItem Text="Lab">
+            <ChildContent>
+                <AuthorizeView Roles="Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="MTC NOLA Audit" Path="lab_nola_audit"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="MTC PSI Audit" Path="lab_psi_audit"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="MTC RMF Screen" Path="lab_rmf_screen"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="MTC Coarse Tails" Path="lab_mtc_coarse_tails"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="MTC Fine Tails" Path="lab_mtc_fine_tails"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Misc. Entry" Path="lab_miscentry"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+
+                <AuthorizeView Roles="Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR,LabDatEnt">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="KTC Lab Entry" Path="lab_ktc_lab_entry"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="KTC SAG Mill" Path="lab_sag_mill"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="KTC Secondary Mill" Path="lab_ktc_sec_mill"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="KTC Quality (MTC Analysis)" Path="ktcqualmtc"></RadzenPanelMenuItem> 
+                        <RadzenPanelMenuItem Text="DR Lab Entry" Path="dr_lab_entry"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+            </ChildContent>
+        </RadzenPanelMenuItem>
+
+        <RadzenPanelMenuItem Text="LIMS">
+            <ChildContent>
+                <RadzenPanelMenuItem Text="Login Sample" Path="lims_loginsample"></RadzenPanelMenuItem>
+                <AuthorizeView Roles="Admin,M_LAB_MGR">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="Cancel Sample" Path="lims_cancel_sample"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Admin,M_LAB_MGR,A_LAB_CLCT">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="Collect Sample" Path="lims_samp_collect"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+                <RadzenPanelMenuItem Text="Oil Results" Path="lims_oil_results"></RadzenPanelMenuItem>
+                <RadzenPanelMenuItem Text="Water Results" Path="lims_water_results"></RadzenPanelMenuItem>
+                <AuthorizeView Roles="Admin,M_LAB_MGR,M_LAB_AN">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="LIMS Batch" Path="lims_limsbatch"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="Particle Counter Converter" Path="lims_partcountconvert"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+
+            </ChildContent>
+        </RadzenPanelMenuItem>
+
+
+
+        <RadzenPanelMenuItem Text="Wood Shipments">
+            <ChildContent>
+                <RadzenPanelMenuItem Text="Wood Shipments" Path="wood_shipment_list"></RadzenPanelMenuItem>
+                <AuthorizeView Roles="Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR">
+                    <Authorized>
+                        <RadzenPanelMenuItem Text="Adjust BTU" Path="wood_adjust_btu"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Export" Path="wood_woodexport"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="Wood Shipments Report" Path="http://mno-reports.mno.uss.com/Reports/report/Minnesota%20Ore%20Operations/Ore%20Movement/Wood%20Shipments" Icon="article" Target="_blank"></RadzenPanelMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+            </ChildContent>
+        </RadzenPanelMenuItem>
+
+
+
+        <AuthorizeView Roles="Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR,M_OM_COOR">
+            <Authorized>
+                <RadzenPanelMenuItem Text="Ore Movement">
+                    <ChildContent>
+                        <RadzenPanelMenuItem Text="Scale Remote Reset" Path="om_scalesvcreset"></RadzenPanelMenuItem>
+                        <RadzenPanelMenuItem Text="PLO Specs" Path="om_plospecs"></RadzenPanelMenuItem>
+                    </ChildContent>
+                </RadzenPanelMenuItem>
+            </Authorized>
+        </AuthorizeView>
+
+
+        <AuthorizeView Roles="Admin">
+            <RadzenPanelMenuItem Text="Admin" Path="admin" Icon="admin_panel_settings"></RadzenPanelMenuItem>
+        </AuthorizeView>
+
+
+    </CascadingAuthenticationState>
+</RadzenPanelMenu>

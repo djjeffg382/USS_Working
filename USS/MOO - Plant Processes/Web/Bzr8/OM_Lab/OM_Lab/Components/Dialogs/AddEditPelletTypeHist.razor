@@ -1,0 +1,86 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.ToLive
+
+
+
+<div class="row">
+    <div class="col-12 mb-2">
+        <h6>Agglomerator Step @PtypeHist.Ag_Step</h6>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>Pellet Type:</h6>
+          <RadzenDropDown AllowClear="false" TValue="DAL.Models.Pellet_Type" @bind-Value="PtypeHist.Pel_Type" Class="w-100"
+                            Data="@PelTypList" TextProperty="Material" Disabled=@(!IsInsert)/>
+    </div>
+</div>
+<div class="row mb-2">
+    <div class="col-12">
+        <h6>Date:</h6>
+        <RadzenDatePicker @bind-Value=@PtypeHist.Start_Date DateFormat="d" Required="true"/>
+    </div>
+</div>
+<div class="col-md-12 text-right mt-4">
+    <RadzenButton Icon="done" Text="Save" Click="OkBtnClick" />
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => dialogService.Close(false))" />
+</div>
+
+@code {
+         /*
+         * This dialog will be used for the Met Entry forms for changing the date
+    */
+    [Parameter] public DAL.Models.Pellet_Type_History PtypeHist { get; set; } = new();
+
+    [Parameter] public bool IsInsert { get; set; } = new();
+
+    private List<DAL.Models.Pellet_Type> PelTypList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PelTypList = await Task.Run(() => DAL.Services.Pellet_TypeSvc.GetAll());
+        await base.OnInitializedAsync();
+    }
+    private async Task OkBtnClick()
+    {
+        if (ValidateSelection())
+        {
+
+            if (IsInsert)
+                await Task.Run(() => DAL.Services.Pellet_Type_HistorySvc.Insert(PtypeHist));
+            
+            dialogService.Close(true);
+        }
+    }
+
+    private bool ValidateSelection()
+    {
+        if(PtypeHist.Start_Date > DateTime.Today.AddDays(30)){
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Date Selected",
+                    Detail = "Cannot insert date more than 30 days into future",
+                    Duration = 6000
+                });
+            return false;
+        }
+        //check that we are not setting the value equal to the value previous to this date
+        DAL.Models.Pellet_Type_History prevType = DAL.Services.Pellet_Type_HistorySvc.GetLatest(PtypeHist.Ag_Step, PtypeHist.Start_Date);
+        if(PtypeHist.Pel_Type.Code == prevType.Pel_Type.Code)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Material Selected",
+                    Detail = "Selected material is same as material prior to this date.",
+                    Duration = 6000
+                });
+            return false;
+        }
+        return true;
+    }
+
+}

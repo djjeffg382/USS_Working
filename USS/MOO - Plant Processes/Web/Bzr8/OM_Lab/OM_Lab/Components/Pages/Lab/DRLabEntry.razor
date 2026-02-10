@@ -1,0 +1,278 @@
+﻿@page "/dr_lab_entry"
+@rendermode InteractiveServer
+@using DAL=MOO.DAL.ToLive
+@using OM_Lab.Data.Models
+@using OM_Lab.Data.Services
+@using Oracle.ManagedDataAccess.Client
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - DR Lab Entry</PageTitle>
+<SectionContent SectionName="page-title">DR Lab Entry</SectionContent>
+
+
+<div class="row mb-2">
+    <div class="col-5 row">
+        <div class="col-3"><h5>Date:</h5></div>
+        <div class="col-3"><RadzenDatePicker @bind-Value=@SelectedDate DateFormat="d" Change="LoadData" /></div>
+        <div class="col-3">
+            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="@SelectedShift" Change="LoadData">
+                <Items>
+                    <RadzenSelectBarItem Value="1" Text="Night" />
+                    <RadzenSelectBarItem Value="2" Text="Day" />
+                </Items>
+            </RadzenSelectBar>
+        </div>
+    </div>
+    <div class="col-2">
+        <RadzenButton Click="SaveData" Text="Save" ButtonStyle="ButtonStyle.Primary" />
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-3">
+        <div style="width:100px">
+            @* styling of this table will happen because of the style Css added from the LabChemPhysTable element *@
+            <table class="labChemPhysTbl" style="width:100%">
+                <tr class="head">
+                    <td class="tblTitle" rowspan="4">Combined Tails</td>
+                    <th style="width:100px">Sample Time</th>
+                    <th>Mag Loss</th>
+                </tr>
+                @foreach (var ctSample in CombinedTailsList)
+                {
+                    <tr>
+                        <th>
+                            @ctSample.Start_Date.ToString("h tt")
+                        </th>
+                        <td>
+                            <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="ctSample.Value" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+
+        <div style="width:100px">
+            @* styling of this table will happen because of the style Css added from the LabChemPhysTable element *@
+            <table class="labChemPhysTbl" style="width:100%">
+                <tr class="head">
+                    <td class="tblTitle" rowspan="4">Screen Oversize</td>
+                    <th style="width:100px">Sample Time</th>
+                    <th>+325M</th>
+                </tr>
+                @foreach (var osSample in ScreenOversizeList)
+                {
+                    <tr>
+                        <th>
+                            @osSample.Analysis_Date.ToString("h tt")
+                        </th>
+                        <td>
+                            <RadzenNumeric class="valueEntry" TextAlign="TextAlign.Right" @bind-Value="osSample.Mesh_325_Wgt" ShowUpDown="false" Min="0" Max="100" Format="0.##" />
+                        </td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+    </div>
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="Screen Feed *Replaces NOLA" Samples="ScreenFeedList" Show325M="true" />
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="Screen Undersize" Samples="ScreenUndersizeList" Show325M="true" />
+    </div>
+    <div class="col-3"></div>
+</div>
+<div class="row mb-2">
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="Flot Feed" Samples="FlotFeedList" />
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="Hig Discharge" Samples="HigDischargeList" Show325M="true" />
+    </div>
+</div>
+
+
+<div class="row mb-2">
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="DR Concentrate" Samples="DRConcentrateList" Show500M="true" Show325M="true" />
+    </div>
+</div>
+
+
+<div class="row mb-2">
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="LIMS Concentrate" Samples="LimsConcentrateList" />
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-6">
+        <OM_Lab.Components.Elements.LabChemPhysTable TableTitle="Filter Cake" Samples="FilterCakeList" Show325M="true" Show500M="true" />
+    </div>
+</div>
+
+
+@code {
+    private DateTime SelectedDate = DateTime.Today;
+    private int SelectedShift = 1;
+    List<LabChemPhys> ScreenFeedList = new();
+    List<LabChemPhys> ScreenUndersizeList = new();
+    List<DAL.Models.Lab_Phys_Analysis> ScreenOversizeList = new();
+    List<LabChemPhys> FlotFeedList = new();
+    List<LabChemPhys> HigDischargeList = new();
+    List<LabChemPhys> DRConcentrateList = new();
+    List<LabChemPhys> LimsConcentrateList = new();
+    List<LabChemPhys> FilterCakeList = new();
+    List<MOO.DAL.Core.Models.Metric_Value> CombinedTailsList = new();
+    DAL.Models.Lab_Chem_Analysis? ChemData = new();
+    DAL.Models.Lab_Phys_Analysis? PhysData = new();
+
+    //MOO.DAL.Core.Models.Metric_Value mv = new(MOO.Plant.Keetac, MOO.Area.Concentrator, DateTime.Now, true, 1140, 300);
+
+    public class Sample()
+    {
+        public DateTime SampleDate;
+        public DAL.Models.Lab_Chem_Analysis Chem_Analysis = new();
+        public DAL.Models.Lab_Phys_Analysis Phys_Analysis = new();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await GetDataAsync();
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+
+    // async Task SelectedDateChangedAsync()
+    // {
+    //     await GetDataAsync();
+    // }
+
+    // async Task GetDataAsync()
+    // {
+    //     CombinedTailsList = await Task.Run(() => MOO.DAL.Core.Services.Metric_ValueSvc.GetByShiftDate(1140, SelectedDate, SelectedDate));
+    //     ScreenFeedList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 3, 3, 7, 12));
+    //     ScreenUndersizeList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 4, 4, 7, 12));
+    //     FlotFeedList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 5, 5, 7, 12));
+    //     HigDischargeList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 6, 6, 7, 12));
+    //     DRConcentrateList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 7, 7, -1, 4));
+    //     LimsConcentrateList = await Task.Run(() => LabChemPhysSvc.GetByShift(SelectedDate, SelectedShift, 8, 8, 7, 12));
+    // }
+
+    private async Task LoadData()
+    {
+
+        DateTime[] startEndShift = MOO.Shifts.Shift.ShiftStartEndTime(MOO.Plant.Keetac, MOO.Area.Concentrator, SelectedDate, (byte)SelectedShift);
+        CombinedTailsList = await Task.Run(() => MOO.DAL.Core.Services.Metric_ValueSvc.GetByDateRange(1140, startEndShift[0], startEndShift[1]));
+        if (CombinedTailsList.Count == 0)
+        {
+            //mag loss is recorded every 4 hours starting at 7 PM
+
+            for (int i = 0; i <= 2; i++)
+            {
+                int addHours = 1 + (i * 4);
+                MOO.DAL.Core.Models.Metric_Value mv = new(MOO.Plant.Keetac, MOO.Area.Concentrator, startEndShift[0].AddHours(addHours), true, 1140, null);
+                CombinedTailsList.Add(mv);
+            }
+        }
+        ScreenOversizeList = await Task.Run(() => DAL.Services.Lab_Phys_AnalysisSvc.GetByAnalysisDate(10, startEndShift[0], startEndShift[1]));
+        if (ScreenOversizeList.Count == 0)
+        {
+            //mag loss is recorded every 4 hours starting at 7 PM
+            var labPhysAnalType = DAL.Services.Lab_Phys_TypeSvc.Get(10);
+            for (int i = 0; i <= 2; i++)
+            {
+                int addHours = 1 + (i * 4);
+                DAL.Models.Lab_Phys_Analysis pa = new()
+                    {
+                        Analysis_Date = startEndShift[0].AddHours(addHours),
+                        Start_Wgt = 100,
+                        Lab_Phys_Type = labPhysAnalType
+                    };
+                pa.CalcShift12(MOO.Plant.Keetac, MOO.Area.Concentrator);
+                pa.CalcShift8(MOO.Plant.Keetac);
+                ScreenOversizeList.Add(pa);
+            }
+        }
+
+        ScreenFeedList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 3, 3, 1, 4));
+        ScreenUndersizeList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 4, 4, 1, 4));
+        FlotFeedList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 5, 5, 1, 4));
+        HigDischargeList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 6, 6, 1, 4));
+        DRConcentrateList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 7, 7, 1, 4));
+        LimsConcentrateList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 8, 8, 1, 4));
+        FilterCakeList = await Task.Run(() => LabChemPhysSvc.GetByShiftWithCreate(SelectedDate, SelectedShift, 25, 11, 1, 4));
+    }
+
+    private async Task SaveData()
+    {
+        bool isSaved = false;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string? usr = authState.User?.Identity?.Name;
+        using OracleConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.DMART));
+        conn.Open();
+        var trans = conn.BeginTransaction();
+        try
+        {
+            foreach (var rec in CombinedTailsList)
+            {
+                await Task.Run(() => MOO.DAL.Core.Services.Metric_ValueSvc.Upsert(rec, conn));
+            }
+            foreach (var rec in ScreenOversizeList){
+                if (rec.Lab_Phys_Analysis_Id <= 0)
+                    await Task.Run(() => DAL.Services.Lab_Phys_AnalysisSvc.Insert(rec, conn));
+                else
+                    await Task.Run(() => DAL.Services.Lab_Phys_AnalysisSvc.Update(rec, conn));
+
+            }
+            await Task.Run(() => LabChemPhysSvc.SaveChemPhys(ScreenFeedList, conn, usr!));
+            LabChemPhysSvc.SaveChemPhys(ScreenUndersizeList, conn, usr!);
+            LabChemPhysSvc.SaveChemPhys(FlotFeedList, conn, usr!);
+            LabChemPhysSvc.SaveChemPhys(HigDischargeList, conn, usr!);
+            LabChemPhysSvc.SaveChemPhys(DRConcentrateList, conn, usr!);
+            LabChemPhysSvc.SaveChemPhys(LimsConcentrateList, conn, usr!);
+            LabChemPhysSvc.SaveChemPhys(FilterCakeList, conn, usr!);
+
+
+            trans.Commit();
+            isSaved = true;
+        }
+        catch (Exception)
+        {
+            trans.Rollback();
+            throw;
+        }
+        finally
+        {
+            conn.Close();
+        }
+        if (isSaved)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Records Saved",
+                    Detail = "Records Saved Successfully",
+                    Duration = 4000
+                });
+        }
+        else
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error Saving Records",
+                    Detail = "Unable to save records",
+                    Duration = 4000
+                });
+        }
+    }
+}

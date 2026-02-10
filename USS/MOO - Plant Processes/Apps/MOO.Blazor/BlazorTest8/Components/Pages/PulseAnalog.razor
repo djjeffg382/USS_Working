@@ -1,0 +1,17 @@
+﻿@page "/PulseAnalog"
+@rendermode InteractiveServer
+@using MOO.Blazor.Components
+@using MOO.Blazor.Models
+@using DAL = MOO.DAL.ToLive
+
+<MOO.Blazor.Pages.Pulse_Analog_Check Area="MOO.DAL.ToLive.Models.Pulse_Analog_Check.PACheckArea.Crusher" />
+
+ aaa
+@code{
+    protected override async Task OnInitializedAsync()
+    {
+        //var paList = await Task.Run(() => DAL.Services.Pulse_Analog_CheckSvc.GetByAreaWithPiValues(DAL.Models.Pulse_Analog_Check.PACheckArea.Crusher, DateTime.Now.AddHours(-2), DateTime.Now));
+        await base.OnInitializedAsync();
+    }
+
+}

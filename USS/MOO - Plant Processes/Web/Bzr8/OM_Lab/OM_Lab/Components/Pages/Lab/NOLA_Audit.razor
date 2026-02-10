@@ -1,0 +1,229 @@
+﻿@page "/lab_nola_audit"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.Pi
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+
+@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE NOLA Audit</PageTitle>
+<SectionContent SectionName="page-title">Minntac NOLA Audit Entry</SectionContent>
+
+<div class="row">
+    <div class="col-4">
+        <h5>NOLA:</h5>
+        <RadzenDropDown AllowClear="false" TValue="KeyValuePair<string, MOO.DAL.Pi.Models.NOLA_Audit.NOLA_Type>" @bind-Value="SelectedNOLAType"
+                        Data=@NOLATypeList TextProperty="Key" Change="LoadGrid" />
+
+
+
+        <RadzenCard class="mt-2">
+            <h2>Add New Reading:</h2>
+            <div class="row mb-2">
+                <div class="col-4">
+                    <h6>Lab Date:</h6>
+                </div>
+                <div class="col-4">
+                    <RadzenDatePicker @bind-Value=@NAuditAdd.Time DateFormat="MM/dd/yyyy" Required="true" ShowTime="false" />
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4">
+                    <h6>Lab Time (HHMM):</h6>
+                </div>
+                <div class="col-4">
+                    <RadzenTextBox @bind-Value="NewNAuditTime" />
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4">
+                    <h6>Value:</h6>
+                </div>
+
+                <div class="col-8">
+                    <RadzenNumeric ShowUpDown="false" TValue="double?" @bind-Value=NAuditAdd.Value />
+                </div>
+            </div>
+            <RadzenButton Click="AddNauditBtnClickAsync" Text="Add Reading" />
+        </RadzenCard>
+
+    </div>
+
+    <div class="col-8">
+        <div class="row mb-2">
+            <div class="col">
+                <RadzenButton Click="DeleteBtnClickedAsync" Icon="delete" ButtonStyle="ButtonStyle.Light" title="Delete Selected NOLA Audit" />
+                <RadzenButton Click="LoadGrid" Icon="refresh" ButtonStyle="ButtonStyle.Light" title="Refresh Grid" />
+            </div>
+        </div>
+        <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="true" Data="@NOLA_AuditHist"
+                        TItem="DAL.Models.NOLA_Audit" style="width:600px;height:500px" SelectionMode="DataGridSelectionMode.Single" @bind-Value=NOLA_Selected>
+            <Columns>
+                <RadzenDataGridColumn TItem="DAL.Models.NOLA_Audit" Property="Time" Title="Time" FormatString="{0:MM/dd/yyyy HH:mm}" />
+                <RadzenDataGridColumn TItem="DAL.Models.NOLA_Audit" Property="Lab" Title="Lab Value" />
+                <RadzenDataGridColumn TItem="DAL.Models.NOLA_Audit" Property="NOLA" Title="NOLA Value" FormatString="{0:N2}" />
+                <RadzenDataGridColumn TItem="DAL.Models.NOLA_Audit" Property="Solids" Title="Solids" FormatString="{0:N2}" />
+
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+
+</div>
+
+
+
+@code {
+    private List<DAL.Models.NOLA_Audit> NOLA_AuditHist = new();
+    private IList<DAL.Models.NOLA_Audit> NOLA_Selected = new List<DAL.Models.NOLA_Audit>();
+    private KeyValuePair<string, MOO.DAL.Pi.Models.NOLA_Audit.NOLA_Type> SelectedNOLAType;
+
+    private Dictionary<string, DAL.Models.NOLA_Audit.NOLA_Type> NOLATypeList = new();
+
+    private DAL.Models.PiComp2 NAuditAdd = new();
+    private string NewNAuditTime = "";
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender){
+            NAuditAdd.Time = DateTime.Today;
+            //create the NolaType LIst
+            NOLATypeList.Add("NOLA 2 Step 2", DAL.Models.NOLA_Audit.NOLA_Type.NOLA2_Step2);
+            NOLATypeList.Add("NOLA 2 Step 3", DAL.Models.NOLA_Audit.NOLA_Type.NOLA2_Step3);
+            NOLATypeList.Add("NOLA 3 Step 2", DAL.Models.NOLA_Audit.NOLA_Type.NOLA3_Step2);
+            NOLATypeList.Add("NOLA 3 Step 3", DAL.Models.NOLA_Audit.NOLA_Type.NOLA3_Step3);
+            NOLATypeList.Add("NOLA 3 Float Feed", DAL.Models.NOLA_Audit.NOLA_Type.NOLA3_FF);
+            SelectedNOLAType = NOLATypeList.First();
+            await LoadGrid();
+
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+
+
+    private async Task LoadGrid()
+    {
+        NOLA_AuditHist = await Task.Run(() => DAL.Services.NOLA_AuditSvc.GetNolaData(SelectedNOLAType.Value, DateTime.Now.AddDays(-5), DateTime.Now).OrderByDescending(a => a.Time).ToList());
+        StateHasChanged();
+    }
+
+    private async Task DeleteBtnClickedAsync()
+    {
+        if (NOLA_Selected.Count > 0)
+        {
+            bool? result = await dialogService.Confirm($"Delete {SelectedNOLAType.Key} for  {NOLA_Selected[0].Time:MM/dd HH:mm}", "Are you sure?",
+                                new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+            if (result.GetValueOrDefault(false))
+                DAL.Services.NOLA_AuditSvc.DeleteNolaAudit(SelectedNOLAType.Value, NOLA_Selected[0].Time);
+
+            await LoadGrid();
+        }
+
+    }
+
+    private async Task AddNauditBtnClickAsync(){
+        if (ValidateSelection())
+        {
+            if (MOO.Settings.ServerType == MOO.Settings.ServerClass.Production)
+            {
+                await Task.Run(() => DAL.Services.NOLA_AuditSvc.InsertNolaAudit(SelectedNOLAType.Value, NAuditAdd.Time, NAuditAdd.Value.GetValueOrDefault(0)));
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Info,
+                        Summary = "Record Inserted",
+                        Detail = "PSI Data Inserted",
+                        Duration = 6000
+                    });
+            }
+            else
+            {
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Data Not Inserted",
+                        Detail = "Data was not inserted as this is a test server and there is no test PI Database",
+                        Duration = 6000
+                    });
+            }
+            //clear the selection but Ore Movement would like to keep the time entered
+            DateTime saveDt = NAuditAdd.Time;
+            NAuditAdd = new();
+            NAuditAdd.Time = saveDt;
+
+        }
+    }
+
+
+    private bool ValidateSelection()
+    {
+        if (!CombineDateAndTime())
+            return false;
+
+        if (NAuditAdd.Time > DateTime.Now.AddHours(1))
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Date Selected",
+                    Detail = "Cannot insert date into future",
+                    Duration = 6000
+                });
+            return false;
+        }
+        if (!NAuditAdd.Value.HasValue || NAuditAdd.Value <= 0)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Value",
+                    Detail = "Invalid NOLA Value",
+                    Duration = 6000
+                });
+            return false;
+        }
+
+
+        return true;
+    }
+
+    /// <summary>
+    /// sets the NewPAuditVal.time to a combination of the time and the HHMM that was entered
+    /// </summary>
+    /// <returns>Returns false if time entered is invalid</returns>
+    private bool CombineDateAndTime()
+    {
+        if (NewNAuditTime.Length != 4 || !int.TryParse(NewNAuditTime, out int timeInt))
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Time Entry",
+                    Detail = "Time must contain 4 characters",
+                    Duration = 6000
+                });
+            return false;
+        }
+
+        int hours = timeInt / 100;
+        int minutes = timeInt % 100;
+
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)
+        {
+            notificationService.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid Time Entry",
+                    Detail = "Time value is invalid",
+                    Duration = 6000
+                });
+            return false;
+        }
+        NAuditAdd.Time = new DateTime(NAuditAdd.Time.Year, NAuditAdd.Time.Month, NAuditAdd.Time.Day, hours, minutes, 0);
+        return true;
+    }
+}

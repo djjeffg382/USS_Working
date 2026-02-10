@@ -1,0 +1,12 @@
+﻿@attribute [Authorize(Roles = "Admin,BSC_Admin")]
+@page "/Admin"
+@rendermode InteractiveServer
+
+<PageTitle>@Util.PROGRAM_TITLE - Admin</PageTitle>
+<SectionContent SectionName="page-title">Admin</SectionContent>
+
+<MOO.Blazor.Components.AppInfo GraylogProgramName="@Util.PROGRAM_NAME" ITSystemId="29"/>
+
+@code {
+    
+}

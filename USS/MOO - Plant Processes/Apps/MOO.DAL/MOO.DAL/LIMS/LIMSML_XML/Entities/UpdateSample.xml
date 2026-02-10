@@ -1,0 +1,12 @@
+﻿        <entity type="SAMPLE">
+          <actions>
+            <action>
+              <command>RESULT_ENTRY</command>
+              <parameter name="UPDATE_SAMPLE">True</parameter>
+            </action>
+          </actions>
+          <fields>
+            <field id="ID_NUMERIC" direction="in">##SAMPLE_ID##</field>
+            ##FIELDS##
+          </fields>
+        </entity>

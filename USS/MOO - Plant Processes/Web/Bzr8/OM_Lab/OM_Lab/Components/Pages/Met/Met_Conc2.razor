@@ -1,0 +1,277 @@
+﻿@page "/met_met_conc2"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+<style>
+    .EntryLabel {
+        display: inline-block !important;
+        width: 150px;
+        font-weight: bold;
+    }
+
+    .EntryBox {
+        width: 100px;
+        text-align: right;
+    }
+
+    .TableEntryBox {
+        text-align: right;
+        width: 100%
+    }
+
+</style>
+
+
+
+<PageTitle>@Util.PROGRAM_TITLE - Met Conc Step 2</PageTitle>
+<SectionContent SectionName="page-title">Met Conc Step 2</SectionContent>
+<RadzenCard class="m-3">
+    <div class="row justify-content-start align-items-center">
+        <div class="col-10 d-flex">
+            <RadzenLabel Text='@("Met Report Date: " + MetParams.MetDate.ToString("MM/dd/yyyy"))' style="font-size:14pt;font-weight:bold" />&nbsp;
+            <RadzenLabel Text='@(MetParams.IsMonthEnd ? " - MONTH END" : "")' style="font-size:14pt;font-weight:bold;color:red" />&nbsp;
+            <RadzenButton Click="EditDateBtnClickAsnc" ButtonStyle="ButtonStyle.Secondary" Icon="edit_calendar" title="Change Date" Width="50px" />
+        </div>
+        <div class="col-2 d-flex align-items-center justify-content-end">
+            <RadzenButton Click="SaveBtnClickAsync" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Save" title="Save Data" Width="50px"
+                          Disabled='@(!DataIsModified || InvalidDateSelection)' BusyText="Saving ..." IsBusy=@IsSaving />
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+<RadzenTabs TabPosition="TabPosition.Left" style="min-width:1200px" RenderMode="TabRenderMode.Client">
+    <Tabs>
+        <RadzenTabsItem Text="Conc Mills">
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@LineData"
+                            TItem="DAL.Models.Met_Conc_Line">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Line" Title="Line" Width="40px" />
+
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Rmf_Tons" Title="RMF Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Rmf_Hours" Title="Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                        <FooterTemplate>
+                            @LineData.Sum(a=> Math.Round(a.Rmf_Hours.GetValueOrDefault(0),2,MidpointRounding.AwayFromZero)).ToString("N2")
+                        </FooterTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Schedhours" Title="Sched Hrs." Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Schedhours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Rmf_Rm_Power" Title="RM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Rm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Rmf_Pbm_Power" Title="PBM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Pbm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Rmf_Sbm_Power" Title="SBM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Sbm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Coil_Mag_Fe" Title="Coil Mag Fe" Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Coil_Mag_Fe Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Conc_Tons" Title="Conc Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Conc_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Conc_Sio2" Title="SiO2" Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Conc_Sio2 Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Conc_270" Title="-270" Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Conc_270 Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn Title="Tails" TItem="DAL.Models.Met_Conc_Line" Width="180px">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Ct_Mag_Fe" Title="Coarse">
+                                <Template Context="data">
+                                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Ct_Mag_Fe Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Ft_Mag_Fe" Title="Fine">
+                                <Template Context="data">
+                                    <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Ft_Mag_Fe Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Flux">
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@FluxData"
+                            TItem="DAL.Models.Met_Conc_Line" style="width:750px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Line" Title="Line" Width="40px" />
+
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Tons" Title="Flux Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Rmf_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Hours" Title="Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Flux_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Rm_Power" Title="RM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Flux_Rm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Pbm_Power" Title="PBM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Flux_Pbm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Sbm_Power" Title="SBM Power">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Flux_Sbm_Power Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Conc_Line" Property="Flux_Minus_200" Title="-200" Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Flux_Minus_200 Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Step 2">
+
+            <div class="row">
+                <div class="col-4">
+                    <div>
+                        <RadzenButton Text="Fill Hours" Click="FillHoursAsync" ButtonStyle="ButtonStyle.Secondary" title="Auto fills the hour information from the Delay system" Visible="@(!MetParams.IsMonthEnd)"/>
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Sched Maint Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Sched_Maint_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Unshed Maint Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Unsched_Maint_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Aggl Request Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Aggl_Request_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Hi Power Limit Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Hi_Power_Lim_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">No Ore Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.No_Ore_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">RMF H2O</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Rmf_H2o" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">RMF Mag Fe</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Rmf_Mag_Fe" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Plant 3/4 Inch</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Plant_34_Inch" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Plant 1/2 Inch</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Plant_12_Inch" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Step 2 NOLA SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Step2_Nola_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Davis Tube RM SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Dav_Tube_Rm_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div>
+                        <span class="EntryLabel">Flot Feed SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Flot_Feed_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Lab Flot SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Lab_Flot_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Flot Minus 270</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Flot_Minus_270" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Flot Mag Fe Rec</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Flot_Mag_Fe_Rec" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Davis Tube Rec Flot</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Dav_Tube_Rec_Flot" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Flot Dry Wt Rec</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Flot_Dry_Wt_Rec" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Flot Tail SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Flot_Tail_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Davis Tube SiO2 Flot</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Dav_Tube_Sio2_Flot" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+                <div class="col-4">
+
+                    <div>
+                        <span class="EntryLabel">Col Froth SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Col_Froth_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Col Conc SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Col_Conc_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Col Fd SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Plant2Data.Col_Fd_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+            </div>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+
+
+@code {
+
+
+
+
+}

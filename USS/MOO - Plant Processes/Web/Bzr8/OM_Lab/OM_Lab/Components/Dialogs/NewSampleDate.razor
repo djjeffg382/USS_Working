@@ -1,0 +1,30 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@using DAL = MOO.DAL.ToLive
+
+<RadzenDatePicker @bind-Value="SampledDate" ShowTime="true" />
+<div class="col-md-12 text-right mt-4">
+    <RadzenButton Icon="done" Text="Ok" Click="OkBtnClick" />
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => dialogService.Close(null))" />
+</div>
+
+@code {
+    /*
+    * This dialog will be used for Entering a new sample date for water samples
+       */
+
+    public const string DEFAULT_WIDTH = "550px";
+    public const string DEFAULT_HEIGHT = "375px";
+
+
+    [Parameter] public DateTime SampledDate { get; set; } = DateTime.Now;
+
+
+    private void OkBtnClick()
+    {
+
+        dialogService.Close(SampledDate);
+    }
+
+
+}

@@ -1,0 +1,1512 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MOO</name>
+    </assembly>
+    <members>
+        <member name="T:MOO.Data">
+            <summary>
+            Class of abstract methods for dealing with MNO Databases
+            </summary>
+        </member>
+        <member name="F:MOO.Data.RECURSIVE_SQL_RETRIES">
+            <summary>
+            Number of times to retry a query before giving up
+            </summary>
+        </member>
+        <member name="F:MOO.Data.CONN_STRING_FILE">
+            <summary>
+            File location of the connection strings to databases
+            </summary>
+        </member>
+        <member name="T:MOO.Data.DBType">
+            <summary>
+            Database Connection type
+            </summary>
+        </member>
+        <member name="F:MOO.Data.DBType.Oracle">
+            <summary>
+            Oracle Database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.DBType.SQLServer">
+            <summary>
+            Microsoft SQL Server
+            </summary>
+        </member>
+        <member name="F:MOO.Data.DBType.OLEDB">
+            <summary>
+            OLEDB Connection
+            </summary>
+        </member>
+        <member name="T:MOO.Data.MNODatabase">
+            <summary>
+            Common MOO Databases
+            </summary>
+            <remarks>To add a database, Add the enum and then add the connection to "C:\MOOGlobalSettings\Connections.json" using the enum name you created</remarks>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.CorpDelays">
+            <summary>
+            Corporate delays database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.DMART">
+            <summary>
+            Oracle DMART database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MTC_Wenco">
+            <summary>
+            Minntac Wenco database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.KTC_Wenco">
+            <summary>
+            Keetac Wenco database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.USSDrillData">
+            <summary>
+            Connection used for all drill databases on MNO-SQL02
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MTC_MinVu">
+            <summary>
+            Minntac MinVu database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.KTC_Minvu">
+            <summary>
+            Keetac MinVu database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MTC_Pi">
+            <summary>
+            Minntac PI Connection
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MTC_PI_AF">
+            <summary>
+            Minntac PI AF Server connection
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MTC_PI_UTC">
+            <summary>
+            Minntac PI Connection using UTC Time
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.OraBscAdmin">
+            <summary>
+            Connection to DMART as user BSCAdmin, used for admin type queries
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MtcMineReport">
+            <summary>
+            Connection to the Minntac Mine reporting database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.KtcMineReport">
+            <summary>
+            Connection to the Minntac Mine reporting database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.LIMS_Read">
+            <summary>
+            Connection to the Sample manager database to read data
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.LIMS_Report">
+            <summary>
+            Connection to the LIMS_Report ETL database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MtcWencoReport">
+            <summary>
+            Minntac Wenco reporting server
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.KtcWencoReport">
+            <summary>
+            Keetac Wenco Reporting server
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MineStar">
+            <summary>
+            MOO Minestar Health Database server
+            </summary>
+        </member>
+        <member name="F:MOO.Data.MNODatabase.MNO_SQL01">
+            <summary>
+            Generic connection to MNO-SQL01 database
+            </summary>
+        </member>
+        <member name="P:MOO.Data.DBConnections">
+            <summary>
+            Name value pair of Database Connections
+            </summary>
+        </member>
+        <member name="T:MOO.Data.DBConnection">
+            <summary>
+            Used for storing information of the parsed connections json file
+            </summary>
+        </member>
+        <member name="F:MOO.Data.DBConnection.ConnectionString">
+            <summary>
+            Connection String to the database
+            </summary>
+        </member>
+        <member name="F:MOO.Data.DBConnection.DBType">
+            <summary>
+            The database type
+            </summary>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQueryAsync(System.String,MOO.Data.MNODatabase,System.Int32)">
+            <summary>
+            Executes the given SQL string and retries based on certain errors
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+            <param name="Recursion"></param>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQueryAsync(System.Data.Common.DbCommand,System.Int32)">
+            <summary>
+            Executes the given SQL string and retries based on certain errors returning a data reader
+            </summary>
+            <param name="Cmd"></param>
+            <param name="Recursion"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteReaderAsync(System.Data.Common.DbCommand,System.Int32)">
+            <summary>
+            Executes the given SQL string and retries based on certain errors
+            </summary>
+            <param name="Cmd"></param>
+            <param name="Recursion"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.FillDataTable(System.Data.Common.DbDataAdapter,System.Data.DataTable,System.Int32)">
+            <summary>
+            Fills the datatable given,
+            </summary>
+            <param name="da"></param>
+            <param name="dt"></param>
+            <param name="recursion"></param>
+            <remarks>This is used to handle any normal SQL errors and perform a retry</remarks>
+        </member>
+        <member name="M:MOO.Data.ExecuteQuery(System.String,MOO.Data.MNODatabase,System.Int32)">
+             <summary>
+             Executes an sql query and returns the result in a dataset
+             </summary>
+             <param name="Sql">The SQL to execute</param>
+             <param name="DB">The database to execute the SQL</param>
+             <param name="recursion">how many recursive times this has been called</param>
+             <returns></returns>
+             <remarks>This was created to handle when Oracle kills connections.  The recursion parameter is used so we don't
+            get an infinite loop.  This should initially be called with zero for recursion and each time this function calls itself
+            it will increment the recursion counter. This should be a private function as this should only be called within the class
+            </remarks>
+        </member>
+        <member name="M:MOO.Data.CheckIfShouldRetryQuery(System.Exception)">
+            <summary>
+            Checks if we should retry the query based on the exception that occurs
+            </summary>
+            <param name="ex">The exception that occurred</param>
+            <returns></returns>
+            <remarks>Sometimes Oracle queries fail because of orphaned connections being disconnected, a simple requery will fix this</remarks>
+        </member>
+        <member name="M:MOO.Data.FillDataTable(System.Data.Common.DbDataAdapter,System.Data.DataTable)">
+            <summary>
+            Fills the dataset and handles common Oracle/SQL Server errors
+            </summary>
+            <param name="da"></param>
+            <param name="dt"></param>
+        </member>
+        <member name="M:MOO.Data.ExecuteQuery(System.Data.Common.DbDataAdapter)">
+            <summary>
+            Executes the dataadapter query to return a dataset
+            </summary>
+            <param name="da"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteQuery(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Executes the SQL Statement on the database and returns a dataset
+            </summary>
+            <param name="Sql">The SQL to be run on the database</param>
+            <param name="DB">The database</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQuery(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Executes a SQL command that doesn't return any thing (example: Update or Delete command)
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQueryAsync(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Executes a SQL command that doesn't return any thing (example: Update or Delete command)
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQuery(System.Data.Common.DbCommand)">
+            <summary>
+            Executes the given Command and retries based on certain errors
+            </summary>
+            <param name="Cmd"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteNonQueryAsync(System.Data.Common.DbCommand)">
+            <summary>
+            Executes the given Command and retries based on certain errors
+            </summary>
+            <param name="Cmd"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteReader(System.Data.Common.DbCommand)">
+            <summary>
+            Executes the given Command and retries based on certain errors retruning a datareader
+            </summary>
+            <param name="Cmd"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteReaderAsync(System.Data.Common.DbCommand)">
+            <summary>
+            Executes the given Command and retries based on certain errors retruning a datareader
+            </summary>
+            <param name="Cmd"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetConnectionString(MOO.Data.MNODatabase)">
+            <summary>
+            Gets the connection string from the Connections.Json file
+            </summary>
+            <param name="DB">Name of the database in the file</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetConnectionStringFromTNSNames(System.String,System.String,System.String,System.String)">
+            <summary>
+            Creates an Oracle EZConnect connection string from the tnsnames.ora file
+            </summary>
+            <param name="tnsEntry">TNS Entry Name</param>
+            <param name="userName"></param>
+            <param name="password"></param>
+            <param name="tnsFile">Location of the TNS File</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteScalarAsync(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Executes the query and returns the first row, first column value
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteScalar(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Executes the query and returns the first row, first column value
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteScalarAsync(System.String,MOO.Data.MNODatabase,System.Object)">
+            <summary>
+            Executes the query and returns the first row, first column value
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+            <param name="ValueIfNoRecords">The value to return if no records found</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ExecuteScalar(System.String,MOO.Data.MNODatabase,System.Object)">
+            <summary>
+            Executes the query and returns the first row, first column value
+            </summary>
+            <param name="Sql"></param>
+            <param name="Db"></param>
+            <param name="ValueIfNoRecords">The value to return if no records found</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetNextSequence(System.String)">
+            <summary>
+            Gets the next Oracle Sequence value from the database
+            </summary>
+            <param name="SequenceName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetNextSequenceAsync(System.String)">
+            <summary>
+            Gets the next Oracle Sequence value from the database
+            </summary>
+            <param name="SequenceName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetNextSequence(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Gets the next sequence number from the specified database
+            </summary>
+            <param name="SequenceName">The name of the sequence</param>
+            <param name="Db">The database connection to use</param>
+            <returns></returns>
+            <remarks>This only works for Oracle and SQL Server</remarks>
+            <exception cref="T:System.Exception"></exception>
+        </member>
+        <member name="M:MOO.Data.GetNextSequenceAsync(System.String,MOO.Data.MNODatabase)">
+            <summary>
+            Gets the next sequence number from the specified database
+            </summary>
+            <param name="SequenceName">The name of the sequence</param>
+            <param name="Db">The database connection to use</param>
+            <returns></returns>
+            <remarks>This only works for Oracle and SQL Server</remarks>
+            <exception cref="T:System.Exception"></exception>
+        </member>
+        <member name="M:MOO.Data.ReadDBKey(System.String)">
+            <summary>
+            Reads the value from the Key/Value database table tolive.key_values
+            </summary>
+            <param name="KeyName">The name of the Key</param>
+            <returns></returns>
+            <remarks>This will error if key does not exist</remarks>
+        </member>
+        <member name="M:MOO.Data.ReadDBKey(System.String,System.String)">
+            <summary>
+            Reads the value from the Key/Value database table tolive.key_values
+            </summary>
+            <param name="KeyName">The name of the Key</param>
+            <param name="DefaultVal">Value to return if key is not found</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.ReadDBKeyAsync(System.String,System.String)">
+            <summary>
+            Reads the value from the Key/Value database table tolive.key_values
+            </summary>
+            <param name="KeyName">The name of the Key</param>
+            <param name="DefaultVal">Value to return if key is not found</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.WriteDBKey(System.String,System.String,System.String,System.String)">
+            <summary>
+            Writes a value to the Key/Values Database table tolive.key_values in dmart
+            </summary>
+            <param name="KeyName">The name of the key</param>
+            <param name="KeyValue">The new value of the key</param>
+            <param name="Description">Description of the key value (only used on first use of key)</param>
+            <param name="ProgramName">Program that is using the DB Key  (only used on first use of key)</param>
+            <remarks>If the key does not exist it will be created.  The description and program name are only used on insert.  Update will not modify these</remarks>
+        </member>
+        <member name="M:MOO.Data.WriteDBKeyAsync(System.String,System.String,System.String,System.String)">
+            <summary>
+            Writes a value to the Key/Values Database table tolive.key_values in dmart
+            </summary>
+            <param name="KeyName">The name of the key</param>
+            <param name="KeyValue">The new value of the key</param>
+            <param name="Description">Description of the key value (only used on first use of key)</param>
+            <param name="ProgramName">Program that is using the DB Key  (only used on first use of key)</param>
+            <remarks>If the key does not exist it will be created.  The description and program name are only used on insert.  Update will not modify these</remarks>
+        </member>
+        <member name="M:MOO.Data.DataTableToObjList``1(System.Data.DataTable)">
+            <summary>
+            converts a datatable to an object list
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="dt"></param>
+        </member>
+        <member name="M:MOO.Data.DataRowToObj``1(System.Data.DataRow)">
+            <summary>
+            Converts the values in a datarow to an object
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="dr"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetOraTableComments(System.String,System.String)">
+            <summary>
+            Gets the comments for a given Oracle Tabls
+            </summary>
+            <param name="SchemaOwner"></param>
+            <param name="TableName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Data.GetOraTableCommentsAsync(System.String,System.String)">
+            <summary>
+            Gets the comments for a given Oracle Tabls
+            </summary>
+            <param name="SchemaOwner"></param>
+            <param name="TableName"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.Dates">
+            <summary>
+            Class used for manipulating dates
+            </summary>
+        </member>
+        <member name="M:MOO.Dates.OraDate(System.DateTime)">
+            <summary>
+            Converts the datetime to an oracle TO_DATE string
+            </summary>
+            <param name="dt">Date to be converted to string</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.OraDate(System.DateTime,System.Boolean)">
+            <summary>
+            Converts the datetime to an oracle TO_DATE string
+            </summary>
+            <param name="dt">Date to be converted to string</param>
+            <param name="TruncateDate">Boolean indicating if the date should be truncated to midnight</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.LastDayOfMonth(System.DateTime)">
+            <summary>
+            Returns the last day of the month for the given date
+            </summary>
+            <param name="TheDate">The date</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.FirstDayOfMonth(System.DateTime)">
+            <summary>
+            Returns the First day of the month for the given date
+            </summary>
+            <param name="TheDate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.FirstDayOfYear(System.DateTime)">
+            <summary>
+            Returns the first day of the year for the given date
+            </summary>
+            <param name="TheDate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.GetQuarterDates(System.DateTime)">
+            <summary>
+            Gets the Begin/End dates of a given quarter
+            </summary>
+            <param name="TheDate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.LastDayOfYear(System.DateTime)">
+            <summary>
+            Returns the last day of the year for the given date
+            </summary>
+            <param name="TheDate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.YMDToDate(System.String)">
+            <summary>
+            Converts a YYYYMMDD string to a datetime
+            </summary>
+            <param name="YMDDate">YYYYMMDD string</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.UnixTimeToDatetime(System.Int64)">
+            <summary>
+            Converts Unix time (seconds since 1970) to DateTime
+            </summary>
+            <param name="UnixTime"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.DateTimeToUnixTime(System.DateTime)">
+            <summary>
+            Converts given datetime to Unix time (seconds since 1/1/1970)
+            </summary>
+            <param name="TheDate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.LocalToStandardTime(System.DateTime)">
+            <summary>
+            converts the local time which is assumed Central to Central Standard Time.  Used for Wenco
+            </summary>
+            <param name="Time"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Dates.StandardToLocalTime(System.DateTime)">
+            <summary>
+            Converts Wenco Standard time to local central time
+            </summary>
+            <param name="Time"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.EmailSubscription">
+            <summary>
+            Class for handling automated email to groups set up in the oracle tolive.email_subscription and tolive.email_subscription_user tables
+            </summary>
+        </member>
+        <member name="P:MOO.EmailSubscription.EmailSubscriptionID">
+            <summary>
+            The email subscriber ID (Primary Key) from the tolive.email_subscription table
+            </summary>
+        </member>
+        <member name="P:MOO.EmailSubscription.SubscriptionName">
+            <summary>
+            The email subscriber ID (Primary Key) from the tolive.email_subscription table
+            </summary>
+        </member>
+        <member name="P:MOO.EmailSubscription.Description">
+            <summary>
+            Description of the Email Subscription
+            </summary>
+        </member>
+        <member name="P:MOO.EmailSubscription.Application">
+            <summary>
+            The application that uses the email subscription
+            </summary>
+        </member>
+        <member name="P:MOO.EmailSubscription.Hide_User_Emails">
+            <summary>
+            Whether the email will be sent as one to all or sent individually to each user
+            </summary>
+        </member>
+        <member name="F:MOO.EmailSubscription.MessageBody">
+            <summary>
+            The body of the message
+            </summary>
+        </member>
+        <member name="F:MOO.EmailSubscription.Subject">
+            <summary>
+            The email subject
+            </summary>
+        </member>
+        <member name="F:MOO.EmailSubscription.Attachments">
+            <summary>
+            Attachments for the email.  Should be file locations to the files comma seperated
+            </summary>
+        </member>
+        <member name="M:MOO.EmailSubscription.#ctor(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="EmailSubscriptionID">The email subscriber ID (Primary Key) from the tolive.email_subscription table</param>
+        </member>
+        <member name="M:MOO.EmailSubscription.SendMail">
+            <summary>
+            Sends an email to the group defined in the database
+            </summary>
+            <remarks>Returns the number of users the email is sent to</remarks>
+        </member>
+        <member name="T:MOO.Enums.Extension.EnumExtension">
+            <summary>
+            Class used for adding extension to the Enum so you can have a description attribute
+            </summary>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetAttribute``1(System.Enum)">
+            <summary>
+                A generic extension method that aids in reflecting 
+                and retrieving any attribute that is applied to an `Enum`.
+                example usage: var displayAttribute =  myEnumVal.GetAttribute&lt;DisplayAttribute&gt;()
+            </summary>
+            <typeparam name="TAttribute">The attribute you want to retrieve</typeparam>
+            <param name="enumValue">The Enum value you want to pull the attribute from</param>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetDisplay(System.Enum)">
+            <summary>
+            Gets the display attribute of the enum
+            </summary>
+            <param name="enumValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetDescription(System.Enum)">
+            <summary>
+            Adds an extension function to an enum to get it's description
+            </summary>
+            <param name="enumValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetDescriptions``1">
+            <summary>
+            Returns an enumerable list of the descriptions of an Enum
+            </summary>
+            <typeparam name="T"></typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetDescriptions(System.Type)">
+            <summary>
+            Returns an enumerable list of the descriptions of an Enum
+            </summary>
+            <param name="EnumType">Enum Type to get descriptions of</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Enums.Extension.EnumExtension.GetEnumByDescription``1(System.String,System.Boolean)">
+            <summary>
+            Gets the Enum value by the description
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="Description">The Enum Description to search for</param>
+            <param name="IgnoreCase">Whether to Ignore case sensitivity</param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="T:MOO.Plant">
+            <summary>
+            Enum for the plant
+            </summary>
+        </member>
+        <member name="F:MOO.Plant.Minntac">
+            <summary>
+            Minntac
+            </summary>
+        </member>
+        <member name="F:MOO.Plant.Keetac">
+            <summary>
+            Keetac
+            </summary>
+        </member>
+        <member name="T:MOO.Area">
+            <summary>
+            Plant areas
+            </summary>
+        </member>
+        <member name="F:MOO.Area.Drilling">
+            <summary>
+            Drilling Crew
+            </summary>
+        </member>
+        <member name="F:MOO.Area.Pit">
+            <summary>
+            Mine or Pit
+            </summary>
+        </member>
+        <member name="F:MOO.Area.Crusher">
+            <summary>
+            Crusher
+            </summary>
+        </member>
+        <member name="F:MOO.Area.Concentrator">
+            <summary>
+            Concentrator
+            </summary>
+        </member>
+        <member name="F:MOO.Area.Agglomerator">
+            <summary>
+            Agglomerator
+            </summary>
+        </member>
+        <member name="T:MOO.MinntacAreas">
+            <summary>
+            Minntac only areas
+            </summary>
+        </member>
+        <member name="F:MOO.MinntacAreas.AggStep2">
+            <summary>
+            agglomerator step 2
+            </summary>
+        </member>
+        <member name="F:MOO.MinntacAreas.AggStep3">
+            <summary>
+            Agglomerator step 3
+            </summary>
+        </member>
+        <member name="F:MOO.MinntacAreas.Conc">
+            <summary>
+            Concentrator
+            </summary>
+        </member>
+        <member name="F:MOO.MinntacAreas.Crusher">
+            <summary>
+            Agglomerator step 3
+            </summary>
+        </member>
+        <member name="F:MOO.MinntacAreas.Mine">
+            <summary>
+            Agglomerator step 3
+            </summary>
+        </member>
+        <member name="T:MOO.Exceptions.ErrorLog">
+            <summary>
+            Class used for logging data to the tolive.error table in DMART
+            </summary>
+        </member>
+        <member name="T:MOO.Exceptions.ErrorLog.ErrorLogType">
+            <summary>
+            The type of error
+            </summary>
+        </member>
+        <member name="F:MOO.Exceptions.ErrorLog.ErrorLogType.Crash">
+            <summary>
+            Program Crash
+            </summary>
+        </member>
+        <member name="F:MOO.Exceptions.ErrorLog.ErrorLogType.Warning">
+            <summary>
+            Warning, may need attention but did not cause crash
+            </summary>
+        </member>
+        <member name="F:MOO.Exceptions.ErrorLog.ErrorLogType.Info">
+            <summary>
+            Informational, used for troubleshooting applications
+            </summary>
+        </member>
+        <member name="F:MOO.Exceptions.ErrorLog.ErrorLogType.PI_Point_Addition">
+            <summary>
+            Used for logging when PI Points are added using the IT_Admin tool
+            </summary>
+            <remarks>I realize this is not an "ERROR" but this is the easiest spot to log this</remarks>
+        </member>
+        <member name="M:MOO.Exceptions.ErrorLog.LogError(System.String,System.Exception)">
+            <summary>
+            Logs an exception to the Oracle error table
+            </summary>
+            <param name="ProgramName">The name of the program</param>
+            <param name="ex">The exception that occured</param>
+        </member>
+        <member name="M:MOO.Exceptions.ErrorLog.LogError(System.String,System.String,System.String,System.String,MOO.Exceptions.ErrorLog.ErrorLogType)">
+            <summary>
+            Records the error to the oracle table
+            </summary>
+            <param name="ProgramName">The name of the executing program</param>
+            <param name="Message">The error message to record</param>
+            <param name="StackTrace">The stack trace to record</param>
+            <param name="AdditionalInfo">Any additional Information about the error</param>
+            <param name="ErrorType">The type of error (Crash/Warning/Info)</param>
+        </member>
+        <member name="M:MOO.Exceptions.ErrorLog.SendErrorLogEmail(System.String,System.Exception,System.String,System.String,System.String,MOO.Exceptions.ErrorLog.ErrorLogType)">
+            <summary>
+            email that will be sent if logging the error fails
+            </summary>
+        </member>
+        <member name="T:MOO.Exceptions.MOOSqlException">
+            <summary>
+            This will be thrown from the data.executsql method if it fails
+            </summary>
+        </member>
+        <member name="M:MOO.Exceptions.MOOSqlException.#ctor(System.Exception,System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="ex">The exception that occurred on running the sql</param>
+            <param name="Sql">The sql that was run</param>
+        </member>
+        <member name="P:MOO.Exceptions.MOOSqlException.Message">
+            <summary>
+            Original exception error Message
+            </summary>
+        </member>
+        <member name="P:MOO.Exceptions.MOOSqlException.StackTrace">
+            <summary>
+            Exception Stack Trace
+            </summary>
+        </member>
+        <member name="P:MOO.Exceptions.MOOSqlException.SQLString">
+            <summary>
+            The SQL String that errored
+            </summary>
+        </member>
+        <member name="T:MOO.General">
+            <summary>
+            Class used for general functions that don't fit anywhere
+            </summary>
+        </member>
+        <member name="M:MOO.General.IsNumber(System.Object)">
+            <summary>
+            Returns if the value is a number
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.Mail">
+            <summary>
+            Class used for sending Email
+            </summary>
+        </member>
+        <member name="M:MOO.Mail.SendMail(System.String,System.String,System.String,System.String)">
+            <summary>
+            Sends mail 
+            </summary>
+            <param name="ProgramName">The name of the program sending the email</param>
+            <param name="Recipients">Comma seperated list of recipients</param>
+            <param name="Subject">Subject of the email</param>
+            <param name="Body">Body of the email</param>
+        </member>
+        <member name="M:MOO.Mail.SendMail(System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Sends mail 
+            </summary>
+            <param name="ProgramName">The name of the program sending the email</param>
+            <param name="Recipients">Comma seperated list of recipients</param>
+            <param name="Subject">Subject of the email</param>
+            <param name="Body">Body of the email</param>
+            <param name="Attachments">Comma seperated list of file attachments</param>
+        </member>
+        <member name="M:MOO.Mail.SendMail(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Boolean,System.Net.Mail.MailPriority,System.String)">
+            <summary>
+            Sends an email
+            </summary>
+            <param name="ProgramName">The name of the program sending the email</param>
+            <param name="From">The From Address</param>
+            <param name="Recipients">Comma seperated list of recipients</param>
+            <param name="CC">Comma seperated list of Carbon copyy recipients</param>
+            <param name="BCC">Comma seperated list of BCC recipients</param>
+            <param name="Subject">Subject of the email</param>
+            <param name="Body">Body of the email</param>
+            <param name="IsHTML">If the email is html or plain text</param>
+            <param name="Priority">Email Priority</param>
+            <param name="Attachments">Comma seperated list of file attachments</param>
+        </member>
+        <member name="M:MOO.Mail.RecordToMailLog(System.String,System.String,System.String,System.String,System.String,System.String,System.Boolean,System.Net.Mail.MailPriority,System.String)">
+            <summary>
+            Records the sent email to the tolive.mail_log table for troubleshooting
+            </summary>
+            <param name="ProgramName">The name of the program sending the email</param>
+            <param name="From">The From Address</param>
+            <param name="Recipients">Comma seperated list of recipients</param>
+            <param name="CC">Comma seperated list of Carbon copyy recipients</param>
+            <param name="BCC">Comma seperated list of BCC recipients</param>
+            <param name="Subject">Subject of the email</param>
+            <param name="IsHTML">If the email is html or plain text</param>
+            <param name="Priority">Email Priority</param>
+            <param name="Attachments">Comma seperated list of file attachments</param>
+        </member>
+        <member name="T:MOO.MailMessage">
+            <summary>
+            Mail Message Object for sending mail.  Alternative to MOO.Mail
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.ProgramName">
+            <summary>
+            The name of the program sending the mail
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Subject">
+            <summary>
+            The subject of the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Body">
+            <summary>
+            The body of the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.From">
+            <summary>
+            The From Address
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Priority">
+            <summary>
+            The priority of the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.IsHtml">
+            <summary>
+            Indicates if the email should be sent as html encoded
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Recipients">
+            <summary>
+            List of recipients for the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.RecipientsCsv">
+            <summary>
+            Comma separated string of recipients
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Cc">
+            <summary>
+            List of Carbon Copy recipients for the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.CcCsv">
+            <summary>
+            Comma separated string of Carbon Copy recipients
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Bcc">
+            <summary>
+            List of Bcc Recipients for the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.BccCsv">
+            <summary>
+            Comma separated string of Blind Carbon Copy recipients
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.Attachments">
+            <summary>
+            List of Attachments for the email
+            </summary>
+        </member>
+        <member name="P:MOO.MailMessage.AttachmentsCsv">
+            <summary>
+            Comma separated string of Attachments
+            </summary>
+        </member>
+        <member name="M:MOO.MailMessage.Send">
+            <summary>
+            Sends the Mail Object through email
+            </summary>
+            <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="T:MOO.Models.OraTableColumnComment">
+            <summary>
+            Comments for Oracle Table Columns
+            </summary>
+        </member>
+        <member name="P:MOO.Models.OraTableColumnComment.ColumnName">
+            <summary>
+            Name of the column in the table
+            </summary>
+        </member>
+        <member name="P:MOO.Models.OraTableColumnComment.Comments">
+            <summary>
+            Comments for the given column
+            </summary>
+        </member>
+        <member name="T:MOO.Network">
+            <summary>
+            functions used for IP based calculations
+            </summary>
+        </member>
+        <member name="M:MOO.Network.GetIpRange(System.Net.IPAddress,System.Int32)">
+            <summary>
+            gets the start and end IP address of a given network and mask
+            </summary>
+            <param name="NetworkAddress"></param>
+            <param name="BitMask"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Network.GetIpRange(System.Net.IPAddress,System.Net.IPAddress)">
+            <summary>
+            gets the start and end IP address of a given network and mask
+            </summary>
+            <param name="NetworkAddress"></param>
+            <param name="SubNet"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Network.GetBroadcastAddress(System.Net.IPAddress,System.Net.IPAddress)">
+            <summary>
+            Gets the broadcast address on a given subnet
+            </summary>
+            <param name="address"></param>
+            <param name="subnetMask"></param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="M:MOO.Network.GetNetworkAddress(System.Net.IPAddress,System.Net.IPAddress)">
+            <summary>
+            Gets the network address of the specified IP and subnet
+            </summary>
+            <param name="Address"></param>
+            <param name="SubnetMask"></param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentException"></exception>
+        </member>
+        <member name="M:MOO.Network.IsInSameSubnet(System.Net.IPAddress,System.Net.IPAddress,System.Net.IPAddress)">
+            <summary>
+            Determines if 2 ip addresses are in the same subnet
+            </summary>
+            <param name="Address1"></param>
+            <param name="Address2"></param>
+            <param name="SubnetMask"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Network.SubnetToBitMask(System.Net.IPAddress)">
+            <summary>
+            converts an IP Subnet mask to bit count
+            </summary>
+            <param name="SubnetMask"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Network.GetIpList(System.Net.IPAddress,System.Net.IPAddress)">
+            <summary>
+            Returns a list of all IPs in a subnet
+            </summary>
+            <param name="startIP"></param>
+            <param name="endIP"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.PlantArea">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:MOO.PlantArea.Id">
+            <summary>
+            Id of area
+            </summary>
+        </member>
+        <member name="P:MOO.PlantArea.Name">
+            <summary>
+            Area Name
+            </summary>
+        </member>
+        <member name="T:MOO.PlantAreaList">
+            <summary>
+            List areas for both Minntac and Keetac
+            </summary>
+        </member>
+        <member name="M:MOO.PlantAreaList.GetMinntacList">
+            <summary>
+            Return list of Minntac Areas
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.PlantAreaList.GetKeetacList">
+            <summary>
+            Return list of Keetac Areas
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:MOO.Services.TeamsNotificationSvc.TEAMSERRORURL">
+            <summary>
+            URL to send POST.
+            </summary>
+        </member>
+        <member name="M:MOO.Services.TeamsNotificationSvc.SendMessage(System.String,MOO.Models.TeamsNotification)">
+            <summary>
+            Sends a message to the Teams notification
+            </summary>
+            <param name="url">URL of the teams</param>
+            <param name="teamsNote">Teams Note value</param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.Settings">
+            <summary>
+            Class for accessing the global settings stored at C:\MOOGlobalSettings\GlobalSettings.json
+            </summary>
+        </member>
+        <member name="T:MOO.Settings.ServerClass">
+            <summary>
+            What type of server this is
+            </summary>
+        </member>
+        <member name="F:MOO.Settings.ServerClass.Production">
+            <summary>
+            Production server (ex: Web Server or Jobs Server)
+            </summary>
+        </member>
+        <member name="F:MOO.Settings.ServerClass.Development">
+            <summary>
+            Development server (ex: Personal laptop or dev server)
+            </summary>
+        </member>
+        <member name="M:MOO.Settings.GetSettingValByName``1(System.String,System.Object)">
+            <summary>
+            Gets the value from the JSON Settings file by name
+            </summary>
+            <param name="Name">The name of the setting</param>
+            <param name="DefaultVal">Default value if not found</param>
+            <returns></returns>        
+        </member>
+        <member name="P:MOO.Settings.ServerType">
+            <summary>
+            The server type 
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.SMTP_Server">
+            <summary>
+            The SMTP Server to be used for mailing
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.MailFromAddress">
+            <summary>
+            The from address that will be used for sending email
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.PriorityMailFromAddress">
+            <summary>
+            Email address used for priority email settings
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.PC_Level2_Email">
+            <summary>
+            Email for the Process Control Level 2
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.LIMS_DB_Name">
+            <summary>
+            The name of the SampleManager Database on MNO-SQL03
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.LIMS_System_Pass">
+            <summary>
+            System Password for LIMS
+            </summary>
+        </member>
+        <member name="P:MOO.Settings.LIMS_ML_Address">
+            <summary>
+            URL for LIMS ML processing
+            </summary>
+        </member>
+        <member name="T:MOO.Shifts.Shift">
+            <summary>
+            This class was made to handle shift schedules starting in 2012 when Minntac and Keetac had completed the changeover to 
+            12 hour shifts.  The shift numbers are assumed will be 1-based.  First shift is 1, second shift is 2 and so on.  In some areas, they do 
+            not have a shift 1 (they have shift 2 and 3).  You must still use 1 and 2 as the shift numbers.  Use ShiftName function to convert
+            it to 2 and 3 though.
+            If there is a change to the shift at any level look at the following procedures to change
+            - ShiftLength
+            - ShiftOffset
+            - Crew
+            - ShiftName
+            - CrewName
+            - CrewCount
+            </summary>
+        </member>
+        <member name="F:MOO.Shifts.Shift.MinntacCrusher12ChangeDate">
+            <summary>
+            this is the date minntac crusher switched from 8's to 12's
+            </summary>
+        </member>
+        <member name="M:MOO.Shifts.Shift.GetShiftVal(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gets the Shift Values for the specified time
+            </summary>
+            <param name="Plant">The plant (minntac or keetac)</param>
+            <param name="ShiftTime">The actual time for obtaining the shift values</param>
+            <param name="Area">The area at the plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift.GetShiftVal(MOO.Plant,MOO.Area,System.DateTime,System.Byte)">
+            <summary>
+            Gets the Shift Values for the specified time
+            </summary>
+            <param name="Plant">The plant (minntac or keetac)</param>
+            <param name="ShiftNbr">The shift Number</param>
+            <param name="ShiftDate">The shift date</param>
+            <param name="Area">The area at the plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftLength(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Returns the length of the shift in hours for the given plant, area, and date
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift length</param>
+            <returns></returns>
+            <remarks>TheDate is a parameter in this so that if schedules change, the shiftlength can return a different 
+            value based on the date</remarks>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftOffset(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gets the offset minutes of the first shift of the day
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift length</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftDay(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gets the shift date for the specified time
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift length</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftHour(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Returns the current shift hour of the day (example if 6:00 am is start of first shift, then 6-7 am is hour 1)
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift hour</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftNumber(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gives the Shift number for the given time
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift Number</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.ShiftStartEndTime(MOO.Plant,MOO.Area,System.DateTime,System.Byte)">
+            <summary>
+            Gets the start and end date of the shift, this will return a date aray with position zero holding the start time and position 1 holding the end time
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area of the plant</param>
+            <param name="theDate">The date of which to find the shift Start/End (Truncate to midnight)</param>
+            <param name="shiftNbr">The shift number of which to find the shift Start/End</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.Crew(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gets the current crew for the given Plant, Area, and date
+            </summary>
+            <param name="plant"></param>
+            <param name="area"></param>
+            <param name="theDate"></param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.Crew(MOO.Plant,MOO.Area,System.DateTime,System.Byte)">
+            <summary>
+            Gets the current crew for the given Plant, Area, and date
+            </summary>
+            <param name="plant"></param>
+            <param name="area"></param>
+            <param name="ShiftDate"></param>
+            <param name="shiftNbr">Shift Number</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.CrewShift(MOO.Plant,MOO.Area,System.DateTime,System.Byte)">
+            <summary>
+            Gets the current shift of the specified crew on the specified date
+            </summary>
+            <param name="plant"></param>
+            <param name="area"></param>
+            <param name="theDate"></param>
+            <param name="crewNbr">Crew Number</param>
+        </member>
+        <member name="M:MOO.Shifts.Shift.CrewCount(MOO.Plant,MOO.Area)">
+            <summary>
+            Returns how many crews there are for a specific plant and area
+            </summary>
+            <param name="plant">The plant</param>
+            <param name="area">The area</param>
+            <returns></returns>
+            <remarks>Most areas have 4 crews.  Drilling has 3 crews</remarks>
+        </member>
+        <member name="M:MOO.Shifts.Shift.CrewNames(MOO.Plant,MOO.Area)">
+            <summary>
+            Gives the string name of the crew (A, B, C, D, E, F, G, H etc.)
+            </summary>
+            <param name="plant"></param>
+            <param name="area"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.Shifts.Shift8">
+            <summary>
+            class for working with the old 8 hour shifts.  For the new 12 hour shifts starting in 2012 use the shift class
+            </summary>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.GetShiftVal(MOO.Plant,MOO.Area,System.DateTime)">
+            <summary>
+            Gets the Shift Values for the specified time
+            </summary>
+            <param name="Plant">The plant (minntac or keetac)</param>
+            <param name="ShiftTime">The actual time for obtaining the shift values</param>
+            <param name="Area">The area at the plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.GetShiftVal(MOO.Plant,MOO.Area,System.DateTime,System.Byte)">
+            <summary>
+            Gets the Shift Values for the specified time
+            </summary>
+            <param name="Plant">The plant (minntac or keetac)</param>
+            <param name="ShiftNbr">The shift Number</param>
+            <param name="ShiftDate">The shift date</param>
+            <param name="Area">The area at the plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.GetOffsetDate(System.DateTime,MOO.Plant)">
+            <summary>
+            Gets the datetime with the plant's offset factored in
+            </summary>
+            <param name="plant"></param>
+            <param name="theDate">The Date to obtain offset</param>
+            <returns></returns>
+            <remarks>Added with version 1.0.0.0 alt7747</remarks>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.ShiftHour(System.DateTime,MOO.Plant)">
+            <summary>
+            Gets hour number of the plant since the start of day
+            </summary>
+            <param name="theDate">Datetime</param>
+            <param name="plant">Plant Enumerator</param>
+            <returns>The hour number since the plant's start of day</returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.HalfShift(System.DateTime,MOO.Plant)">
+            <summary>
+             Gets the Half Shift number of the plant since the start of day
+            </summary>
+            <param name="theDate">Datetime</param>
+            <param name="plant">Plant Enumerator</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.ShiftNumber(System.DateTime,MOO.Plant)">
+            <summary>
+            Gets the shift number for the the given datetime and plant
+            </summary>
+            <param name="theDate">The Datetime</param>
+            <param name="plant">The plant enumerator</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.ShiftDate(System.DateTime,MOO.Plant)">
+            <summary>
+            Gets the shift for a given date and time (returns the next day if it
+            is past 9 PM for Keetac or 10:30 PM for Minntac)
+            </summary>
+            <param name="theDate"></param>
+            <param name="plant"></param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.CrewNumber(System.DateTime,MOO.Plant,MOO.Area)">
+            <summary>
+            Gets the crew number for the specified parameters
+            </summary>
+            <param name="theDate">The datetime</param>
+            <param name="plant">The plant Area</param>
+            <param name="area">The plant</param>
+            <returns>The crew number</returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.CrewShift(System.DateTime,System.Byte,MOO.Plant,MOO.Area)">
+            <summary>
+            Gets the shift number for a specific crew and date
+            </summary>
+            <param name="theDate">The date</param>
+            <param name="crewNumber">The crew number</param>
+            <param name="plant">The plant area</param>
+            <param name="area">The plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.CrewStartDate(System.Byte,MOO.Plant,MOO.Area)">
+            <summary>
+            gets the first midnight shift of a specified crew at a specified area
+            </summary>
+            <param name="crewNumber">The crew number</param>
+            <param name="plant">The area</param>
+            <param name="area">The plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.ShiftStartEndTime(System.DateTime,System.Byte,MOO.Plant)">
+            <summary>
+            Returns the start time and end time of a given shift
+            </summary>
+            <param name="theDate">The Shift Date</param>
+            <param name="shift">The Shift Number</param>
+            <param name="plant">The plant</param>
+            <returns></returns>
+             <remarks> Shift 1 will return the previous day for the start time
+            example shift 1 at Keetac for Jan 2 will return 9:00PM on Jan 1</remarks>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.HalfShiftStartEndTime(System.DateTime,System.Byte,MOO.Plant)">
+            <summary>
+            Returns the start time and end time of a given half shift
+            </summary>
+            <param name="theDate">The Shift Date</param>
+            <param name="halfNum">The half Shift Number (1-6)</param>
+            <param name="plant">The plant</param>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.CrewCount(MOO.Plant,MOO.Area)">
+            <summary>
+            Returns how many crews there are for a specific plant and area
+            </summary>
+            <param name="area">The area</param>
+            <param name="plant">The plant</param>
+            <returns></returns>
+            <remarks>Most areas have 4 crews.  Drilling has 3 crews</remarks>
+        </member>
+        <member name="M:MOO.Shifts.Shift8.ShiftStartEndTime(System.DateTime,MOO.Plant)">
+            <summary>
+            Get the start and the end datetime of the shift
+            </summary>
+            <param name="theDate">The date time of the shift</param>
+            <param name="plant">The Plant</param>
+            <returns>An array with index 0 being the start time and index 1 being the end time</returns>
+        </member>
+        <member name="T:MOO.Shifts.ShiftTypes">
+            <summary>
+            8 or 12 hour shift schedule type
+            </summary>
+        </member>
+        <member name="F:MOO.Shifts.ShiftTypes.Shift_8_Hour">
+            <summary>
+            Refers to the old 8 hour shift schedule used circa 2010 or before
+            </summary>
+        </member>
+        <member name="F:MOO.Shifts.ShiftTypes.Shift_12_Hour">
+            <summary>
+            Refers to 12 hour shift schedule
+            </summary>
+        </member>
+        <member name="T:MOO.Shifts.ShiftVal">
+            <summary>
+            Model for holding data related to a shift 
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.Plant">
+            <summary>
+            The plant (Minntac/Keetac)
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.Area">
+            <summary>
+            The area at the plant
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftStartTime">
+            <summary>
+            Start Time of the shift
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.EndShiftTime">
+            <summary>
+            EndTime of the shift
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftNumber">
+            <summary>
+            Shift number
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftDate">
+            <summary>
+            The Shift date for the shift
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftLength">
+            <summary>
+            Length of the shift in hours
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftOffset">
+            <summary>
+            Offset in minutes for the shift 1 from Midnight 
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.Crew">
+            <summary>
+            Crew for the specified shift
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.CrewName">
+            <summary>
+            Name of the crew
+            </summary>
+        </member>
+        <member name="P:MOO.Shifts.ShiftVal.ShiftType">
+            <summary>
+            Whether this is the 8 or 12 hour shift type
+            </summary>
+        </member>
+        <member name="M:MOO.Shifts.ShiftVal.NextShift">
+            <summary>
+            Returns the Next Shift object
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MOO.Shifts.ShiftVal.PreviousShift">
+            <summary>
+            Returns the Next Shift object
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.TNSNamesOraParser">
+            <summary>
+            Used for parsing the tnsnames.ora file
+            </summary>
+        </member>
+        <member name="M:MOO.TNSNamesOraParser.ParseTnsNamesFile(System.String)">
+            <summary>
+            Parses the tnsnames.ora file into entry/value list
+            </summary>
+            <param name="filePath"></param>
+            <returns></returns>
+        </member>
+        <member name="T:MOO.TNSNamesOraParser.TNSEntry">
+            <summary>
+            TNS Entries from tnsnames.ora file
+            </summary>
+        </member>
+        <member name="P:MOO.TNSNamesOraParser.TNSEntry.Entry">
+            <summary>
+            The TNS Entry
+            </summary>
+        </member>
+        <member name="P:MOO.TNSNamesOraParser.TNSEntry.Value">
+            <summary>
+            The Value of the TNS Entry
+            </summary>
+        </member>
+    </members>
+</doc>

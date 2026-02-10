@@ -1,0 +1,16 @@
+﻿				<entity type="EXPLORER_AUX">
+					<actions>
+						<action>
+							<command>EXECUTE</command>
+							<parameter name="TABLE">SAMPLE</parameter>
+							<parameter name="IDENTITY">##COMMAND##</parameter>
+						</action>
+					</actions>
+					<children>
+						<entity type="SAMPLE">
+							<fields>
+								<field id="_KEY0" direction="in">##SAMPLE_ID##</field>
+							</fields>
+						</entity>
+					</children>
+				</entity>

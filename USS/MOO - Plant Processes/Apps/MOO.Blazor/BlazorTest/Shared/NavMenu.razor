@@ -1,0 +1,17 @@
+﻿@inherits LayoutComponentBase
+
+<RadzenPanelMenu>
+    <ChildContent>
+        <RadzenPanelMenuItem Text="Home" Path="/" Icon="home"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="Counter" Path="/counter" Icon="grid_on"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="Email Subscriptions" Path="/emailsubscrip"></RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="Anomalies" Path="/Anomalies"></RadzenPanelMenuItem>
+
+
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <RadzenPanelMenuItem Text="Metric Value Entry" Path="/mventry"></RadzenPanelMenuItem>
+            </Authorized>
+        </AuthorizeView>
+    </ChildContent>
+</RadzenPanelMenu>

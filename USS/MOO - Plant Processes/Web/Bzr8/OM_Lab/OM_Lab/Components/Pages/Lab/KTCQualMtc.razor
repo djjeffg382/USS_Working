@@ -1,0 +1,334 @@
+﻿@page "/ktcqualmtc"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using Core = MOO.DAL.Core
+@using System.Text
+@using System.Data
+@using Microsoft.Data.SqlClient
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+
+@inject NotificationService notificationService
+
+<PageTitle>@Util.PROGRAM_TITLE - Ktc Quality (Mtc Analysis)</PageTitle>
+<SectionContent SectionName="page-title">Ktc Quality (Mtc Analysis)</SectionContent>
+
+
+<div class="row mb-4">
+    <div class="col-6">
+        <h5>Date:</h5>
+        <RadzenDatePicker @bind-Value=@ShiftDate DateFormat="d" Change="RefreshData" />
+    </div>
+    <div class="col-6">
+        <RadzenButton Text="Get From SampleManager" Click="GetValuesFromSampMgrAsync" IsBusy="IsRetrievingLIMS" title="Retrieves the sample values from SampleManager" ButtonStyle="ButtonStyle.Info" />
+    </div>
+</div>
+
+
+<RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@LabData"
+                TItem="DAL.Models.Lab_Chem_Analysis" style="width:900px;">
+    <Columns>
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Lab_Chem_Type.Lab_Chem_Type_Id" Title="">
+            <Template>
+                @if (context.Lab_Chem_Type.Lab_Chem_Type_Id == CONC_DAT_LAB_CHEM_ID)
+                {
+                    <span>Concentrate</span>
+                }
+                else if (context.Lab_Chem_Type.Lab_Chem_Type_Id == PELL_DAT_LAB_CHEM_ID)
+                {
+                    <span>Pellet</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Custom1" Title="Keetac Sample" Width="130px">
+            <Template>
+                <RadzenTextBox @bind-Value="context.Custom1" MaxLength="10" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Custom2" Title="Minntac Sample" Width="130px">
+
+            <Template>
+                <RadzenTextBox @bind-Value="context.Custom2" MaxLength="10" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Fe" Title="Total Fe">
+            <Template>
+                <RadzenNumeric @bind-Value="context.Fe" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="SiO2" Title="SiO2">
+            <Template>
+                <RadzenNumeric @bind-Value="context.SiO2" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+        
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Al2O3" Title="Al2O3">
+            <HeaderTemplate>Al<sub>2</sub>O<sub>3</sub></HeaderTemplate>
+            <Template>
+                <RadzenNumeric @bind-Value="context.Al2O3" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="CaO" Title="CaO">
+            <Template>
+                <RadzenNumeric @bind-Value="context.CaO" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+        
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="MgO" Title="MgO">
+            <Template>
+                <RadzenNumeric @bind-Value="context.MgO" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="DAL.Models.Lab_Chem_Analysis" Property="Mn" Title="Mn">
+            <Template>
+                <RadzenNumeric @bind-Value="context.Mn" ShowUpDown="false" Format="N2" />
+            </Template>
+        </RadzenDataGridColumn>
+
+
+    </Columns>
+</RadzenDataGrid>
+
+
+<div class="mt-4">
+
+    <RadzenButton Click="SaveDataAsync" Text="Save" IsBusy="IsSaving" ButtonStyle="ButtonStyle.Primary" />
+</div>
+
+@code {
+    List<DAL.Models.Lab_Chem_Analysis> LabData = [];
+    DateTime ShiftDate = DateTime.Today;
+    private const int CONC_DAT_LAB_CHEM_ID = 23;
+    private const int PELL_DAT_LAB_CHEM_ID = 24;
+
+    //variables for when async tasks are running
+    private bool IsRetrievingLIMS = false;
+    private bool IsSaving = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            await RefreshData();
+            StateHasChanged();
+        }
+    }
+    private async Task RefreshData()
+    {
+        LabData = [];
+        var concDatList = await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.GetByShiftDate(CONC_DAT_LAB_CHEM_ID, ShiftDate, ShiftDate, DAL.Enums.ShiftType.ShiftType8Hour));
+        if (concDatList.Count != 1)
+        {
+            //don't have record in DB yet so make an object for one now
+            LabData.Add(GetNewLabChemRecord(CONC_DAT_LAB_CHEM_ID));
+        }
+        else
+        {
+            LabData.Add(concDatList[0]);
+        }
+
+        var pellDatList = await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.GetByShiftDate(PELL_DAT_LAB_CHEM_ID, ShiftDate, ShiftDate, DAL.Enums.ShiftType.ShiftType8Hour));
+        if (pellDatList.Count != 1)
+        {
+            //don't have record in DB yet so make an object for one now
+            LabData.Add(GetNewLabChemRecord(PELL_DAT_LAB_CHEM_ID));
+        }
+        else
+        {
+            LabData.Add(pellDatList[0]);
+        }
+        //we want pellet first so order descending
+        LabData = LabData.OrderByDescending(x => x.Lab_Chem_Type.Lab_Chem_Type_Id).ToList();
+
+    }
+
+    private async Task SaveDataAsync()
+    {
+        IsSaving = true;
+        foreach (var dat in LabData)
+        {
+
+           
+            if (dat.Lab_Chem_Analysis_Id <= 0)
+                await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.Insert(dat));
+            else
+                await Task.Run(() => DAL.Services.Lab_Chem_AnalysisSvc.Update(dat));
+
+
+
+            //this data was set up in the core.metric system also.  For now we will update that as well but in future I would like to remove the need for this
+            if (dat.Lab_Chem_Type.Lab_Chem_Type_Id == PELL_DAT_LAB_CHEM_ID)
+            {
+                await UpsertMetricValue(775, null, dat.Custom1);
+                await UpsertMetricValue(776, null, dat.Custom2);
+                await UpsertMetricValue(769, dat.Fe, "");
+                await UpsertMetricValue(770, dat.SiO2, "");
+                await UpsertMetricValue(771, dat.Al2O3, "");
+                await UpsertMetricValue(772, dat.CaO, "");
+                await UpsertMetricValue(773, dat.MgO, "");
+                await UpsertMetricValue(774, dat.Mn, "");
+            }
+
+            if (dat.Lab_Chem_Type.Lab_Chem_Type_Id == CONC_DAT_LAB_CHEM_ID)
+            {
+                await UpsertMetricValue(777, null, dat.Custom1);
+                await UpsertMetricValue(778, null, dat.Custom2);
+                await UpsertMetricValue(763, dat.Fe, "");
+                await UpsertMetricValue(764, dat.SiO2, "");
+                await UpsertMetricValue(765, dat.Al2O3, "");
+                await UpsertMetricValue(766, dat.CaO, "");
+                await UpsertMetricValue(767, dat.MgO, "");
+                await UpsertMetricValue(768, dat.Mn, "");
+            }
+        }
+
+
+        notificationService.Notify(new NotificationMessage()
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Records Saved",
+                Detail = "Records Saved Successfully",
+                Duration = 4000
+            });
+
+        IsSaving = false;
+    }
+
+    /// <summary>
+    /// Upserts the Metric Value table with the lab data
+    /// </summary>
+    /// <param name="MetricId"></param>
+    /// <param name="ShiftDate"></param>
+    /// <param name="Value"></param>
+    /// <param name="ValueStr"></param>
+    /// <returns></returns>
+    private async Task UpsertMetricValue(int MetricId, double? Value, string ValueStr)
+    {
+        var shiftVal = MOO.Shifts.Shift8.GetShiftVal(MOO.Plant.Keetac, MOO.Area.Agglomerator, ShiftDate.AddHours(3));
+        Core.Models.Metric_Value mv = new()
+            {
+                Metric_Id = MetricId,
+                Shift_Date = ShiftDate,
+                Shift = 1,
+                Half = 2,
+                Hour = 7,
+                Update_Date = DateTime.Now,
+                Start_Date = ShiftDate.AddHours(3),
+                Value = (decimal?)Value,
+                Value_Str = ValueStr,
+                Start_Date_No_DST = ShiftDate.ToUniversalTime().AddHours(-6).AddHours(3)
+            };
+        await Task.Run(() => Core.Services.Metric_ValueSvc.Upsert(mv));
+    }
+
+    /// <summary>
+    /// Creates a new empty Lab_Chem_Analysis object based on the shift date selected
+    /// </summary>
+    /// <param name="LabChemId"></param>
+    /// <returns></returns>
+    private DAL.Models.Lab_Chem_Analysis GetNewLabChemRecord(int LabChemId)
+    {
+        DAL.Models.Lab_Chem_Type ChemType = DAL.Services.Lab_Chem_TypeSvc.Get(LabChemId);
+
+        DAL.Models.Lab_Chem_Analysis retVal = new()
+            {
+                Lab_Chem_Type = ChemType,
+                Shift_Date12 = ShiftDate,
+                Shift_Date8 = ShiftDate,
+                Shift_Nbr12 = 1,
+                Shift_Nbr8 = 1,
+                Analysis_Date = ShiftDate.AddHours(3)
+            };
+        return retVal;
+
+    }
+
+    /// <summary>
+    /// gets values from Sample Manager and auto fills the data
+    /// </summary>
+    /// <returns></returns>
+    private async Task GetValuesFromSampMgrAsync()
+    {
+        IsRetrievingLIMS = true;
+        try
+        {
+            foreach (var dat in LabData)
+                await FillValues(dat);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Error retrieving KTC Quality (MTC Analysis) from Sample Manager");
+        }
+        IsRetrievingLIMS = false;
+        StateHasChanged();
+    }
+
+    private async Task FillValues(DAL.Models.Lab_Chem_Analysis Analysis)
+    {
+        string db = MOO.Settings.LIMS_DB_Name;
+        string samplePnt;
+        if (Analysis.Lab_Chem_Type.Lab_Chem_Type_Id == CONC_DAT_LAB_CHEM_ID)
+            samplePnt = "K_CONC_MTC";
+        else if (Analysis.Lab_Chem_Type.Lab_Chem_Type_Id == PELL_DAT_LAB_CHEM_ID)
+            samplePnt = "K_PELL_MTC";
+        else
+            throw new Exception("Invalid Analysis Type");
+
+
+
+        StringBuilder sql = new();
+        sql.AppendLine("SELECT id_numeric, component_name, status, result_value");
+        sql.AppendLine($"FROM {db}.dbo.SAMP_TEST_RESULT");
+        sql.AppendLine($"WHERE sampling_point = '{samplePnt}'");
+        sql.AppendLine("AND login_date BETWEEN @startDate AND @endDate");
+        sql.AppendLine("ORDER BY login_date");  //put the order by in just in case we get 2 samples in a day, this will then cause us to use the last sample for the date
+
+        using SqlConnection conn = new(MOO.Data.GetConnectionString(MOO.Data.MNODatabase.LIMS_Read));
+        SqlCommand cmd = new(sql.ToString(), conn);
+        cmd.Parameters.AddWithValue("startDate", ShiftDate);
+        cmd.Parameters.AddWithValue("endDate", ShiftDate.AddDays(1).AddSeconds(-1));
+
+        await conn.OpenAsync();
+        var rdr = await cmd.ExecuteReaderAsync();
+        while (await rdr.ReadAsync())
+        {
+            Analysis.Custom2 = rdr.GetString(0).Trim();  //Minntac Sample Number goes to Custom 2
+
+            if (rdr.GetString(2) == "A")
+            {
+                //only use Authorized status
+                switch (rdr.GetString(1).ToUpper())
+                {
+                    case "AL":
+                        Analysis.Al2O3 = rdr.GetDouble(3);
+                        break;
+                    case "CA":
+                        Analysis.CaO = rdr.GetDouble(3);
+                        break;
+                    case "MG":
+                        Analysis.MgO = rdr.GetDouble(3);
+                        break;
+                    case "MN":
+                        Analysis.Mn = rdr.GetDouble(3);
+                        break;
+                    case "SI":
+                        Analysis.SiO2 = rdr.GetDouble(3);
+                        break;
+                    case "FE":
+                        Analysis.Fe = rdr.GetDouble(3);
+                        break;
+                }
+            }
+        }
+        await conn.CloseAsync();
+
+    }
+
+}

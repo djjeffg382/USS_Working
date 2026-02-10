@@ -1,0 +1,203 @@
+﻿@page "/lab_rmf_screen"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@using System.Text
+@using System.Data
+@using OM_Lab.Components.Elements
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+
+@inject NotificationService NotificationSvc
+
+<PageTitle>@Util.PROGRAM_TITLE - RMF Screen</PageTitle>
+<SectionContent SectionName="page-title">RMF Screen</SectionContent>
+
+
+
+<RadzenCard class="m-3" style="width:1400px">
+    <div class="row mb-4">
+        <div class="col-2">
+            <h5>Date:</h5>
+            <RadzenDatePicker @bind-Value=@SelectedDate DateFormat="d" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <h5>Step</h5>
+            <RadzenNumeric ShowUpDown="true" TValue="byte" @bind-Value=@SelectedStep Format="0" Min="2" Max="3" Change="LoadData" />
+        </div>
+        <div class="col-2">
+            <RadzenButton Click="SaveData" Text="Save" ButtonStyle="ButtonStyle.Primary" />
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col-3">
+            <RMFScnTable EditScn="RmfScn1" ValuesChanged="CalcDayAvg"></RMFScnTable>
+        </div>
+        <div class="col-3">
+            <RMFScnTable EditScn="RmfScn2" ValuesChanged="CalcDayAvg"></RMFScnTable>
+        </div>
+        <div class="col-3">
+            <RMFScnTable EditScn="RmfScn3" ValuesChanged="CalcDayAvg"></RMFScnTable>
+        </div>
+        <div class="col-3">
+            <table class="blueTable" style='margin-top:85px;width:200px'>
+                <thead>
+                    <tr>
+                        <th colspan="2">24 Hr Avg. Cum Pass %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style='width:100px'>1</td>
+                        <td>@Avg1</td>
+                    </tr>
+                    <tr>
+                        <td>3/4</td>
+                        <td>@Avg34</td>
+                    </tr>
+                    <tr>
+                        <td>1/2</td>
+                        <td>@Avg12</td>
+                    </tr>
+                    <tr>
+                        <td>1/4</td>
+                        <td>@Avg14</td>
+                    </tr>
+                    <tr>
+                        <td>6M</td>
+                        <td>@Avg6m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+
+@code {
+    private DateTime SelectedDate = DateTime.Today;
+    private byte SelectedStep = 2;
+
+    DAL.Models.Rmf_Screen RmfScn1 = new();
+    DAL.Models.Rmf_Screen RmfScn2 = new();
+    DAL.Models.Rmf_Screen RmfScn3 = new();
+
+
+    //Avg Vals
+    private decimal? Avg1, Avg34, Avg12, Avg14, Avg6m;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadData()
+    {
+        List<DAL.Models.Rmf_Screen> RmfScnList = await Task.Run(() => DAL.Services.Rmf_ScreenSvc.GetShiftDate(SelectedDate, SelectedStep));
+        RmfScn1 = FindShift(RmfScnList, 1);
+        RmfScn2 = FindShift(RmfScnList, 2);
+        RmfScn3 = FindShift(RmfScnList, 3);
+        CalcDayAvg();
+    }
+
+
+
+    /// <summary>
+    /// Finds the RMF Screen record in the list by shift, if it doesn't find one it creates one
+    /// </summary>
+    /// <param name="RmfList"></param>
+    /// <param name="Shift"></param>
+    /// <returns></returns>
+    private DAL.Models.Rmf_Screen FindShift(List<DAL.Models.Rmf_Screen> RmfList, byte Shift)
+    {
+        DAL.Models.Rmf_Screen? RmfScn = RmfList.FirstOrDefault(x => x.Shift == Shift);
+        if (RmfScn == null)
+            RmfScn = new()
+                {
+                    Shift = Shift,
+                    Shift_Date = SelectedDate,
+                    Step = SelectedStep
+                };
+        return RmfScn;
+    }
+
+    private async Task SaveData()
+    {
+        //do an upsert on each shift
+        await UpsertShift(RmfScn1);
+        await UpsertShift(RmfScn2);
+        await UpsertShift(RmfScn3);
+
+    }
+    private async Task UpsertShift(DAL.Models.Rmf_Screen Scn)
+    {
+        //only save if we have a start weight
+        if ((Scn.Start_Wgt.HasValue || Scn.CumulativeWeight > 0) && Scn.Start_Wgt != Scn.CumulativeWeight)               
+        {
+            NotificationSvc.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Unable to save",
+                    Detail = $"Unable to save shift {Scn.Shift} - Start weight does not equal total weight",
+                    Duration = 8000
+                });
+            return;
+        }
+
+        try
+        {
+            //we will only save the shift if data is entered, we only need to check start weight 
+            //because the check for start weight equals cumulative will cover if only partially filled
+            if (Scn.Start_Wgt.HasValue)
+            {
+                int recsAffected = await Task.Run(() => DAL.Services.Rmf_ScreenSvc.Update(Scn));
+                if (recsAffected == 0)
+                    await Task.Run(() => DAL.Services.Rmf_ScreenSvc.Insert(Scn));
+                NotificationSvc.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Data Saved",
+                    Detail = $"Shift {Scn.Shift} saved.",
+                    Duration = 4000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            MOO.Exceptions.ErrorLog.LogError("bzr/OM_Lab/RMF_Screen", ex);
+            NotificationSvc.Notify(new NotificationMessage()
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error Saving Data",
+                    Detail = $"Unable to save shift {Scn.Shift} - {ex.Message}",
+                    Duration = 8000
+                });
+        }
+
+    }
+
+    private void CalcDayAvg()
+    {
+        Avg1 = CalcAvg3(RmfScn1.Scn_1_Cumulative, RmfScn2.Scn_1_Cumulative, RmfScn3.Scn_1_Cumulative);
+        Avg34 = CalcAvg3(RmfScn1.Scn_3_4_Cumulative, RmfScn2.Scn_3_4_Cumulative, RmfScn3.Scn_3_4_Cumulative);
+        Avg12 = CalcAvg3(RmfScn1.Scn_1_2_Cumulative, RmfScn2.Scn_1_2_Cumulative, RmfScn3.Scn_1_2_Cumulative);
+        Avg14 = CalcAvg3(RmfScn1.Scn_1_4_Cumulative, RmfScn2.Scn_1_4_Cumulative, RmfScn3.Scn_1_4_Cumulative);
+        Avg6m = CalcAvg3(RmfScn1.Scn_6m_Cumulative, RmfScn2.Scn_6m_Cumulative, RmfScn3.Scn_6m_Cumulative);
+    }
+
+    private decimal? CalcAvg3(decimal? Val1, decimal? Val2, decimal? Val3)
+    {
+        decimal sum = Val1.GetValueOrDefault(0) + Val2.GetValueOrDefault(0) + Val3.GetValueOrDefault(0);
+        uint nCount = (Val1.HasValue ? 1U : 0U) + (Val2.HasValue ? 1U : 0U) + (Val3.HasValue ? 1U : 0U);
+
+        if (sum > 0 && nCount>0)
+        {
+            return Math.Round(sum / nCount,1,MidpointRounding.AwayFromZero);
+        }
+        else
+            return null;
+    }
+}

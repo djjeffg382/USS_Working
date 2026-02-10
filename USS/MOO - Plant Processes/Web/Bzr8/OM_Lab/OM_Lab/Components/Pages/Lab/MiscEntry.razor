@@ -1,0 +1,18 @@
+﻿@page "/lab_miscentry"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.Pi
+@using System.Text
+@using System.Data
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET")]
+
+<PageTitle>@Util.PROGRAM_TITLE - Lab Misc. Entry</PageTitle>
+<SectionContent SectionName="page-title">Miscellaneous Value Entry</SectionContent>
+
+
+
+<MOO.Blazor.Components.MetricValueEntry MetricIds="MetricIds"></MOO.Blazor.Components.MetricValueEntry>
+
+
+@code {
+    private int[] MetricIds = { 1090, 1092 };
+}

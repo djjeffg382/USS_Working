@@ -1,0 +1,29 @@
+﻿@page "/anomalies"
+@rendermode InteractiveServer
+@using MOO.Blazor.Components
+@using MOO.Blazor.Models
+
+
+<h1>Anomalies Test Page</h1>
+<MOO.Blazor.Components.AnomaliesView Plant="MOO.Plant.Minntac" Location="Concentrator" />
+
+@* 
+<AnomaliesView Plant="MOO.Plant.Keetac" Location="Concentrator Plant" Style="width:300px" 
+                AnomDetailHtmlLocation='@(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "anomDetail/"))'>
+    
+</AnomaliesView>  *@
+
+ 
+<MOO.Blazor.Components.AnomaliesView Plant="MOO.Plant.Minntac" Location="Floatation"  /> 
+
+@code{
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+    }
+
+}

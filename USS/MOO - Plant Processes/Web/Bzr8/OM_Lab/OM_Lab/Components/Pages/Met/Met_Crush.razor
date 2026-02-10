@@ -1,0 +1,313 @@
+﻿@page "/met_met_crush"
+@rendermode InteractiveServer
+@using DAL = MOO.DAL.ToLive
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+
+<style>
+    .EntryLabel {
+        display: inline-block !important;
+        width: 170px;
+        font-weight: bold;
+    }
+
+    .EntryBox {
+        width: 120px;
+        text-align: right;
+    }
+
+    .TableEntryBox {
+        text-align: right;
+        width: 100%
+    }
+
+</style>
+
+
+
+<PageTitle>@Util.PROGRAM_TITLE - Met Crusher</PageTitle>
+<SectionContent SectionName="page-title">Met Crusher</SectionContent>
+<RadzenCard class="m-3">
+    <div class="row justify-content-start align-items-center">
+        <div class="col-10 d-flex">
+            <RadzenLabel Text='@("Met Report Date: " + MetParams.MetDate.ToString("MM/dd/yyyy"))' style="font-size:14pt;font-weight:bold" />&nbsp;
+            <RadzenLabel Text='@(MetParams.IsMonthEnd ? " - MONTH END" : "")' style="font-size:14pt;font-weight:bold;color:red" />&nbsp;
+            <RadzenButton Click="EditDateBtnClickAsnc" ButtonStyle="ButtonStyle.Secondary" Icon="edit_calendar" title="Change Date" Width="50px" />
+        </div>
+        <div class="col-2 d-flex align-items-center justify-content-end">
+            <RadzenButton Click="SaveBtnClickAsync" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Save" title="Save Data" Width="50px"
+                          Disabled='@(!DataIsModified || InvalidDateSelection)' BusyText="Saving ..." IsBusy=@IsSaving />
+        </div>
+    </div>
+
+</RadzenCard>
+
+
+
+<RadzenTabs TabPosition="TabPosition.Left" style="min-width:1200px" RenderMode="TabRenderMode.Client">
+    <Tabs>
+        <RadzenTabsItem Text="Primary">
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@PrimaryData"
+                            TItem="DAL.Models.Met_Crush_Primary" style="width:1200px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Unit" Title="Unit" Width="40px" />
+
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Tons" Title="Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Feed_Time" Title="Feed Time" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Feed_Time Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Sched_Hours" Title="Sched Hrs." Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Sched_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Crushing_Time" Title="Crush Time" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crushing_Time Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Down_Time" Title="Down Time" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Down_Time Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Green_Idle_Time" Title="Green Idle Time" Width="110px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Green_Idle_Time Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Red_Idle_Time" Title="Red Idle Time" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Red_Idle_Time Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="No_Ore_Hrs" Title="No Ore Hrs." Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.No_Ore_Hrs Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Hangup_Hrs" Title="Hangup Hrs." Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Hangup_Hrs Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Avail_Hours" Title="Avail Hrs." Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Avail_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Primary" Property="Trucks_Dumped" Title="Trucks Dumped" Width="90px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Trucks_Dumped Change=@(()=> DataIsModified= true) Format="N0" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Secondary">
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@SecondaryData"
+                            TItem="DAL.Models.Met_Crush_Secondary" style="width:700px;height:650px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Unit" Title="Unit" Width="40px" />
+
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Tons" Title="Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Crush_Hours" Title="Crush Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Crush_Kwh" Title="Crush KWH">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Kwh Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Metal_Dly_Hours" Title="Metal Delay Hrs." Width="110px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Metal_Dly_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Secondary" Property="Sched_Hours" Title="Sched Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Sched_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Tertiary">
+            <RadzenDataGrid AllowFiltering="false" AllowPaging="false" AllowSorting="false" Data="@TertiaryData"
+                            TItem="DAL.Models.Met_Crush_Tertiary" style="width:700px;height:650px">
+                <Columns>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Unit" Title="Unit" Width="40px" />
+
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Tons" Title="Tons">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Tons Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Crush_Hours" Title="Crush Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Crush_Kwh" Title="Crush KWH">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Crush_Kwh Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Metal_Dly_Hours" Title="Metal Delay Hrs." Width="110px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Metal_Dly_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="DAL.Models.Met_Crush_Tertiary" Property="Sched_Hours" Title="Sched Hours" Width="100px">
+                        <Template Context="data">
+                            <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@data.Sched_Hours Change=@(()=> DataIsModified= true) Format="N2" class="TableEntryBox" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Plant">
+            <div class="row">
+                <div class="col-4">
+                    <div>
+                        <span class="EntryLabel">Tons 005-05</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_005_05" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Hours 005-05</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Hours_005_05" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 009-01</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_009_1" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 009-02</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_009_2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 009-03</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_009_3" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 009-04</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_009_4" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div>
+                        <span class="EntryLabel">Tons 080 In 1</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_080_In_1" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 080 Out 1</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_080_Out_1" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 080 In 3</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_080_In_3" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Tons 080 Out 3</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Tons_080_Out_3" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Bal 080 1</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Bal_080_1" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Bal 080 3</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Bal_080_3" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div>
+                        <span class="EntryLabel">Limestone Tons</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Limestone_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Limestone Hours</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Limestone_Hours" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4" style=@(MetParams.IsMonthEnd? "":"display:none")>
+                <div class="col-8">
+                    <div>
+                        <RadzenButton Text="Fill From MinVu" Click="GetMinvuDataAsync" ButtonStyle="ButtonStyle.Secondary"></RadzenButton>
+                    </div>
+                    <div>
+                        <span class="EntryLabel"></span>
+                        <span style='font-weight:bold;display: inline-block !important;width:120px'>Month</span>
+                        <span style='font-weight:bold;display: inline-block !important;width:120px'>Year</span>
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Crude Ore Produced</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Crude_To_Crusher_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Crude % Indicated SiO2</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Mine_Indicated_Sio2" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Crude Ind. SiO2 Std Dev</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Mine_Indicated_Sio2_Stdev" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">LC1/LC2 %</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Lc1_And_Lc2_Pct" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantDataYear.Lc1_And_Lc2_Pct" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">High SiO2 %</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Hisio2_Pct" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantDataYear.Hisio2_Pct" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Surface Tons</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Surface_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">OMR Tons</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Omr_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">OMH Tons</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Omh_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Ore Stocked</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Stocked_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Total Material Handled</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Total_Handled_Tons" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">Demand Peak - MW</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Demand_Peak_Mw" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantDataYear.Demand_Peak_Mw" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+                    <div>
+                        <span class="EntryLabel">KWH/Ton Pellets</span>
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantData.Kwh_Pellet_Ton" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="PlantDataYear.Kwh_Pellet_Ton" Change=@(()=> DataIsModified= true) Format="N2" class="EntryBox" />
+                    </div>
+
+                </div>
+            </div>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>

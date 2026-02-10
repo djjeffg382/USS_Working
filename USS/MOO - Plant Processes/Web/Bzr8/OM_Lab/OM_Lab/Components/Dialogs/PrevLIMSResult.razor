@@ -1,0 +1,28 @@
+﻿
+<h4>
+    @SamplePoint - @Component
+</h4>
+<RadzenChart>
+    <RadzenLegend Visible="false" />
+    <RadzenLineSeries Smooth="false" Data="@ResultHist" CategoryProperty="SampleDate" Title="Samples" LineType="LineType.Dashed" ValueProperty="Value">
+        <RadzenMarkers MarkerType="MarkerType.Square" />
+        
+    </RadzenLineSeries>
+</RadzenChart>
+
+
+@code {
+    [Parameter] public long SampleId { get; set; }
+    [Parameter] public string SamplePoint { get; set; } = "";
+    [Parameter] public string Component { get; set; } = "";
+
+    private List<Data.Models.LIMSResultHist> ResultHist = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        ResultHist = Data.Services.LIMSResultHistSvc.Get(SampleId, Component);
+
+        await base.OnInitializedAsync();
+    }
+}

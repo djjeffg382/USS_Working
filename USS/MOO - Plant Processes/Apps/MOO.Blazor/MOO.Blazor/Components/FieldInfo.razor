@@ -1,0 +1,92 @@
+﻿@inject TooltipService tooltipService
+@inject DialogService DialogService
+
+<RadzenIcon Icon="help_outline" MouseEnter="@(args => ShowTooltip(args) )" IconStyle="IconStyle.Info" @onclick="(async () => await ShowInlineDialog())" Style="cursor:pointer" />
+
+
+@code {
+    /// <summary>
+    /// The Name of the field
+    /// </summary>
+    [Parameter]
+    public string FieldName { get; set; } = "";
+
+    /// <summary>
+    /// Help text that will be shown when the user mouse over icon, if not set, then HelpText is shown
+    /// </summary>
+    [Parameter]
+    public string ToolTipText { get; set; } = "";
+
+    /// <summary>
+    /// Help text that will be shown when the user clicks on the text
+    /// </summary>
+    [Parameter]
+    public string HelpText { get; set; } = "";
+
+
+    /// <summary>
+    /// Used for showing information in html format
+    /// </summary>
+    [Parameter]
+    public RenderFragment? Template { get; set; }
+
+    /// <summary>
+    /// Determines the width of the help dialog.  Defaults used if not set
+    /// </summary>
+    [Parameter]
+    public string? HelpDialogWidth { get; set; }
+
+
+    /// <summary>
+    /// Determines the height of the help dialog.  Defaults used if not set
+    /// </summary>
+    [Parameter]
+    public string? HelpDialogHeight { get; set; }
+
+
+    void ShowTooltip(ElementReference elementReference, TooltipOptions options = null)
+    {
+        string tipText = ToolTipText;
+        if (string.IsNullOrEmpty(tipText))
+            tipText = HelpText;
+
+        //If our help text differs from tool tip text or we have a template defined, then add click for more info.
+        if (Template != null || !string.Equals(tipText, HelpText))
+            tipText += "  Click for more info...";
+
+        tooltipService.Open(elementReference, tipText, options);
+        
+    }
+
+
+    async Task ShowInlineDialog()
+    {
+        string title = "Help";
+        if (!string.IsNullOrEmpty(FieldName))
+            title = FieldName;
+
+        RenderFragment dialogRender;
+        if (Template != null)
+            dialogRender = Template;
+        else
+        {
+            dialogRender = @<div>                                
+                                @HelpText
+                            </div>
+    ;
+        }
+
+        DialogOptions diagOpt = new(){
+            Draggable = true,
+            Resizable = true
+        };
+        if (!string.IsNullOrEmpty(HelpDialogHeight) || !string.IsNullOrEmpty(HelpDialogWidth))
+        {        
+            diagOpt.Height = HelpDialogHeight;
+            diagOpt.Width = HelpDialogWidth;
+            
+        }
+        
+        await DialogService.OpenAsync(title, ds => dialogRender, options: diagOpt);
+    }
+}

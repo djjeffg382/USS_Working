@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MOO.Blazor", "MOO.Blazor\MOO.Blazor.csproj", "{64392F88-5BF1-4894-9FD7-C2F58096FD26}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorTest", "BlazorTest\BlazorTest.csproj", "{8905FC0E-BF40-4A80-B14C-CC90EEC660F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorTest8", "BlazorTest8\BlazorTest8.csproj", "{930FC944-ACB4-46ED-A996-E76F0C1D3599}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{64392F88-5BF1-4894-9FD7-C2F58096FD26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64392F88-5BF1-4894-9FD7-C2F58096FD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64392F88-5BF1-4894-9FD7-C2F58096FD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64392F88-5BF1-4894-9FD7-C2F58096FD26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8905FC0E-BF40-4A80-B14C-CC90EEC660F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8905FC0E-BF40-4A80-B14C-CC90EEC660F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8905FC0E-BF40-4A80-B14C-CC90EEC660F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8905FC0E-BF40-4A80-B14C-CC90EEC660F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{930FC944-ACB4-46ED-A996-E76F0C1D3599}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{930FC944-ACB4-46ED-A996-E76F0C1D3599}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{930FC944-ACB4-46ED-A996-E76F0C1D3599}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{930FC944-ACB4-46ED-A996-E76F0C1D3599}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A90DFCC3-9636-45EF-BEB8-906675A987E3}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs.uss.com/special%20projects
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = MOO.Blazor\\MOO.Blazor.csproj
+		SccProjectName1 = MOO.Blazor
+		SccLocalPath1 = MOO.Blazor
+		SccProjectUniqueName2 = BlazorTest\\BlazorTest.csproj
+		SccProjectName2 = BlazorTest
+		SccLocalPath2 = BlazorTest
+		SccProjectUniqueName3 = BlazorTest8\\BlazorTest8.csproj
+		SccProjectName3 = BlazorTest8
+		SccLocalPath3 = BlazorTest8
+	EndGlobalSection
+EndGlobal

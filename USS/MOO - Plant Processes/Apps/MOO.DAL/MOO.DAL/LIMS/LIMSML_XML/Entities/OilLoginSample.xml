@@ -1,0 +1,15 @@
+﻿        <entity type="SAMPLE">
+          <actions>
+            <action>
+              <command>CREATE_BY_WORKFLOW</command>
+              <parameter name="WORKFLOW_NAME">OIL_WEB_LOGIN</parameter>
+            </action>
+          </actions>
+          <fields>
+            <field direction="out" id="ID_TEXT"/>
+            <field id="SAMPLING_POINT" datatype="Text" direction="in" >##SampPoint##</field>
+            <field id="COMMENTS" datatype="Text" direction="in" >##Comments##</field>
+            <field id="USS_LABEL_PRINTER" datatype="Text" direction="in" >##PRINTER##</field>
+          </fields>
+          <children />
+        </entity>

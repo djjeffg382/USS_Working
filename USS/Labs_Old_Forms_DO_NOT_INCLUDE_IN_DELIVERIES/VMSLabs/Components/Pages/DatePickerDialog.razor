@@ -1,0 +1,33 @@
+@using Radzen
+@inject DialogService DialogService
+@code {
+    [Parameter]
+    public DateTime SelectedDate { get; set; }
+    [Parameter]
+    public EventCallback<DateTime> SelectedDateChanged { get; set; }
+
+    private DateTime dateValue;
+
+    protected override void OnInitialized()
+    {
+        dateValue = SelectedDate;
+    }
+
+    void OnOk()
+    {
+        SelectedDateChanged.InvokeAsync(dateValue);
+        DialogService.Close(dateValue);
+    }
+    void OnCancel()
+    {
+        DialogService.Close(null);
+    }
+}
+
+<RadzenCard Style="padding:20px;">
+    <RadzenDatePicker @bind-Value="dateValue" Style="width:100%;" />
+    <div style="margin-top:20px;text-align:right;">
+        <RadzenButton Text="OK" Click="OnOk" Style="margin-right:10px;" />
+        <RadzenButton Text="Cancel" Click="OnCancel" ButtonStyle="ButtonStyle.Secondary" />
+    </div>
+</RadzenCard>

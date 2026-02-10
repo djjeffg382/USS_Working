@@ -1,0 +1,120 @@
+﻿@inject Radzen.DialogService dialogService
+@inject NotificationService notificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using DAL = MOO.DAL.ToLive
+
+
+<div class="row">
+    <div class="col-12 mb-2">
+        <h6>Invoice Number:</h6>
+        <RadzenTextBox @bind-Value=@Wood.Invoice_Nbr MaxLength="8" />
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>Delivery Date:</h6>
+        <RadzenDatePicker @bind-Value=@Wood.Delivery_Date DateFormat="d" Required="true" ShowTime="false" />
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>Inbound Weight:</h6>
+        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@Wood.Inbound_Wt />
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>Outbound Weight:</h6>
+        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@Wood.Outbound_Wt />
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>Average Moisture %:</h6>
+        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@Wood.Avg_Perc_Moist />
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <h6>BTU/LB:</h6>
+        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value=@Wood.Btu_Lb />
+    </div>
+</div>
+<div class="col-md-12 text-right mt-4">
+    <RadzenButton Icon="done" Text="Save" Click="OkBtnClick" />
+    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="cancel" Text="Cancel" Click="@((args) => dialogService.Close(false))" />
+</div>
+
+@code {
+    /*
+    * This dialog will be used for the Met Entry forms for changing the date
+    */
+    [Parameter] public DAL.Models.Wood_Truck_Shipments Wood { get; set; } = new();
+    [Parameter] public bool IsInsert { get; set; } = false;
+
+
+
+    private async Task OkBtnClick()
+    {
+        if (ValidateSelection())
+        {
+            if (IsInsert)
+            {
+                try
+                {
+                    await Task.Run(() => DAL.Services.Wood_Truck_ShipmentsSvc.Insert(Wood));
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.ToUpper().Contains("WOOD_TS_PK"))
+                    {
+                        //primary key constraint
+                        notificationService.Notify(new NotificationMessage()
+                            {
+                                Severity = NotificationSeverity.Warning,
+                                Summary = "Invalid Entry",
+                                Detail = "Invoice Number already exists",
+                                Duration = 4000
+                            });
+                    }
+                    else
+                    {
+                        notificationService.Notify(new NotificationMessage()
+                            {
+                                Severity = NotificationSeverity.Warning,
+                                Summary = "Error inserting record",
+                                Detail = $"Cannot insert record, error: {ex.Message}",
+                                Duration = 4000
+                            });
+                        MOO.Exceptions.ErrorLog.LogError("bzr/OM_Lab/AddEditWood", ex);
+                    }
+                    return;
+                }
+            }
+            else
+                await Task.Run(() => DAL.Services.Wood_Truck_ShipmentsSvc.Update(Wood));
+            dialogService.Close(true);
+        }
+    }
+
+    private bool ValidateSelection()
+    {
+        bool retVal = true;
+        if (IsInsert)
+        {
+            if (string.IsNullOrEmpty(Wood.Invoice_Nbr))
+            {
+                notificationService.Notify(new NotificationMessage()
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Invalid Entry",
+                        Detail = "Missing Invoice Number",
+                        Duration = 4000
+                    });
+                retVal = false;
+            }
+        }
+        return retVal;
+    }
+
+}

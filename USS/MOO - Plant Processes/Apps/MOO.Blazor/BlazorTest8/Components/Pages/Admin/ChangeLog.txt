@@ -1,0 +1,7 @@
+﻿Put Changelog items in here
+
+Example
+
+1/1/2000: Altman
+	Change made to someting
+

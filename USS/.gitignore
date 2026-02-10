@@ -1,0 +1,57 @@
+# Build outputs
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in*/
+[Oo]bj*/
+
+# Visual Studio / IDE
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.slnx
+*.vcxproj.user
+*.csproj.user
+*.vbproj.user
+
+# Source control bindings (TFS/VS)
+*.vssscc
+*.vspscc
+
+# Test results
+[Tt]est[Rr]esult*/
+[TestResults*]/
+*.coverage
+*.coveragexml
+
+# Logs and diagnostics
+*.log
+logs/
+
+# NuGet
+project.lock.json
+packages/
+*.nuget.props
+*.nuget.targets
+
+# Rider / VS Code / other IDEs
+.idea/
+.vscode/
+*.orig
+
+# Warp-related
+.warp/
+.warp*/
+
+# Misc
+*.tmp
+*.temp
+~$*
+*.swp
+*.swo

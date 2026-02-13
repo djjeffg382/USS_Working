@@ -1,0 +1,36 @@
+@page "/comptest_initial"
+@rendermode InteractiveServer
+@* @attribute [Authorize(Roles = "Admin,M_OM_COOR")] *@
+
+<style>
+.rz-datagrid .rz-tr.rz-state-selected td {
+    background-color: #e0f3ff !important;
+}
+</style>
+
+<PageTitle>Comp Test Initial</PageTitle>
+
+<RadzenCard class="m-3">
+    <div class="row mb-2">
+        <div class="col d-flex align-items-center">
+            <RadzenCheckBox @bind-Value="ShowAll" TValue="bool" Change="ShowAllChanged" />
+            <label style="margin-left:8px; margin-right:16px;">Show All</label>
+            <RadzenButton Text="Edit Selected" Icon="edit" Style="margin-left:0px;" Disabled="@(!CanEditSelected)" Click="EditSelectedAsync" />
+        </div>
+    </div>
+    <RadzenDataGrid @ref="CompGrid" AllowFiltering="true" AllowColumnResize="true" FilterMode="FilterMode.Simple" AllowSorting="true" IsLoading="GridLoading"
+                    Data="@CompTestList" TItem="MOO.DAL.ToLive.Models.Lab_Compression" AllowVirtualization="true" ShowPagingSummary="true" FilterDelay="3000"
+                    Style="height:600px" SelectionMode="DataGridSelectionMode.Single" RowSelect="OnRowSelect">
+        <Columns>
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Seq_Nbr" Title="Sequence" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Shift_Date" Title="Shift Date" FormatString="{0:MM/dd/yyyy}" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Shift" Title="Shift" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Shift_Half" Title="Shift Half" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Line_Nbr" Title="Line #" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Comp200" Title="Comp 200" FormatString="{0:N3}" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Comp300" Title="Comp 300" FormatString="{0:N3}" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Average" Title="Average" FormatString="{0:N0}" />
+            <RadzenDataGridColumn TItem="MOO.DAL.ToLive.Models.Lab_Compression" Property="Created_Date" Title="Created Date" />
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>

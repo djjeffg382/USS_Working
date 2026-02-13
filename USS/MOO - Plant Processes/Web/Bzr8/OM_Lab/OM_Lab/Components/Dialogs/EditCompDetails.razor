@@ -1,0 +1,92 @@
+@using MOO.DAL.ToLive.Models
+@inherits EditCompDetailsBase
+
+<style>
+    .bgmin td {
+        background-color: #cce6ff !important;
+    }
+    .bgmax td {
+        background-color: #ffcccc !important;
+    }
+</style>
+
+<RadzenCard class="m-1 pt-1">
+    <RadzenTemplateForm Data="CompTest" TItem="Lab_Compression" Submit="OnValidSubmit">
+        <ChildContent>
+            <!-- 1st row: Read-only SEQ_NBR, Start Time, End Time -->
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <RadzenLabel Text="Sequence" />
+                    <RadzenTextBox Value="@(CompTest.Seq_Nbr?.ToString())" Disabled="true" Style="width:100%" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Start Time" />
+                    <RadzenTextBox Value="@StartTime" Disabled="true" Style="width:100%" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="End Time" />
+                    <RadzenTextBox Value="@EndTime" Disabled="true" Style="width:100%" />
+                </div>
+            </div>
+            <!-- 2nd row: Editable Shift_Date, Shift, Shift_Half, Line_Nbr with restrictions -->
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <RadzenLabel Text="Shift Date" />
+                    <RadzenDatePicker @bind-Value="CompTest.Shift_Date" DateFormat="MM/dd/yyyy" Style="width:100%" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenLabel Text="Shift" />
+                    <RadzenNumeric @bind-Value="CompTest.Shift" Min="1" Max="3" Style="width:100%" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenLabel Text="Shift Half" />
+                    <RadzenNumeric @bind-Value="CompTest.Shift_Half" Min="1" Max="2" Style="width:100%" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenLabel Text="Line #" />
+                    <RadzenNumeric @bind-Value="CompTest.Line_Nbr" Min="3" Max="7" Step="1" Style="width:100%" />
+                </div>
+            </div>
+            <!-- 3rd row: Read-only Comp200, Comp300, Average -->
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <RadzenLabel Text="Comp 200" />
+                    <RadzenNumeric @bind-Value="CompTest.Comp200" Disabled="true" ShowUpDown="false" Format="N3" Style="width:100%" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Comp 300" />
+                    <RadzenNumeric @bind-Value="CompTest.Comp300" Disabled="true" ShowUpDown="false" Format="N3" Style="width:100%" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Average" />
+                    <RadzenNumeric @bind-Value="CompTest.Average" Disabled="true" ShowUpDown="false" Format="N0" Style="width:100%" />
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col text-end">
+                    <RadzenButton Text="Save" Icon="save" ButtonType="ButtonType.Submit" Style="margin-right:8px" />
+                    <RadzenButton Text="Cancel" Icon="close" ButtonStyle="ButtonStyle.Secondary" Click="OnCancel" />
+                </div>
+            </div>
+        </ChildContent>
+    </RadzenTemplateForm>
+
+    <h6 class="mt-4">Compression Details</h6>
+    <div class="row">
+        @for (int i = 0; i < CompressionBuckets.Count; i++)
+        {
+            <div class="col" style="min-width:120px;">
+                <RadzenListBox Data="@CompressionBuckets[i]" TValue="Lab_Compression_Dtl" Style="height:560px;">
+                    <Template Context="item">
+                        <div>
+                            <span>@item.Pellet_Nbr:</span>
+                            <span style="@GetCompLbsStyle(item.Comp_Lbs)">
+                                @item.Comp_Lbs
+                            </span>
+                        </div>
+                    </Template>
+                </RadzenListBox>
+            </div>
+        }
+    </div>
+</RadzenCard>

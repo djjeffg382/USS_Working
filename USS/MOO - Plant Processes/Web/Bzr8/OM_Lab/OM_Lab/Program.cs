@@ -6,16 +6,22 @@ using Radzen;
 using Serilog;
 using System.Data.Common;
 
-
 var configBuilder = new ConfigurationBuilder();
 BuildConfig(configBuilder);
+var configuration = configBuilder.Build();
 string ServerType = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
+// Read IsDevelopment from configuration
+bool isDevelopment = configuration.GetValue<bool>("IsDevelopment");
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(configBuilder.Build())
-                .Enrich.WithProperty("ServerType", ServerType)
-                .Enrich.WithProperty("Program", Util.PROGRAM_NAME));
+
+if (!isDevelopment)
+{
+    builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(configuration)
+        .Enrich.WithProperty("ServerType", ServerType)
+        .Enrich.WithProperty("Program", Util.PROGRAM_NAME));
+}
 
 //register the SQL Server library to be used for the MOO library
 DbProviderFactories.RegisterFactory(MOO.Data.DBType.SQLServer.ToString(), Microsoft.Data.SqlClient.SqlClientFactory.Instance);
@@ -25,23 +31,26 @@ DbProviderFactories.RegisterFactory(MOO.Data.DBType.Oracle.ToString(), Oracle.Ma
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
-builder.Services.AddAuthorization(options =>
+if (!isDevelopment)
 {
-    // By default, all incoming requests will be authorized according to the default policy.
-    options.FallbackPolicy = options.DefaultPolicy;
-});
+    builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme).AddNegotiate();
+    builder.Services.AddAuthorization(options =>
+    {
+        // By default, all incoming requests will be authorized according to the default policy.
+        options.FallbackPolicy = options.DefaultPolicy;
+    });
+    //adds code that will add user roles
+    builder.Services.AddScoped<IClaimsTransformation, MOO.Blazor.Security.UserInfoClaims>();
+}
 
 builder.Services.AddRadzenComponents();
-
+builder.Services.AddScoped<Radzen.DialogService>();
+builder.Services.AddScoped<OM_Lab.Services.ICompTestService, OM_Lab.Services.CompTestService>();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
     options.Name = Util.APP_THEME_NAME; // The name of the cookie
     options.Duration = TimeSpan.FromDays(365); // The duration of the cookie
 });
-//adds code that will add user roles
-builder.Services.AddScoped<IClaimsTransformation, MOO.Blazor.Security.UserInfoClaims>();
-
 
 //This will be used so that the dates will default across each page request
 builder.Services.AddScoped<OM_Lab.Data.Models.MetChangeDateVals>();
@@ -68,8 +77,11 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.UseAuthentication();
-app.UseAuthorization();
+if (!isDevelopment)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
 app.MapControllers();   //added this line so we can use controllers
 

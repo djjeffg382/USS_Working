@@ -14,8 +14,14 @@ namespace OM_Lab.Models
         /// <summary>Primary key of the Before-Tumbles Lab_Phys_Analysis row, or 0 if new.</summary>
         public int BtAnalysisId { get; set; }
 
+        /// <summary>Analysis date of the Before-Tumbles record; null for new (unpersisted) records.</summary>
+        public DateTime? BtAnalysisDate { get; set; }
+
         /// <summary>Primary key of the After-Tumbles Lab_Phys_Analysis row, or 0 if new.</summary>
         public int AtAnalysisId { get; set; }
+
+        /// <summary>Analysis date of the After-Tumbles record; null for new (unpersisted) records.</summary>
+        public DateTime? AtAnalysisDate { get; set; }
 
         // ── Editable fields ───────────────────────────────────────────────────
         /// <summary>Start weight from the Before-Tumbles record (also used as the AT denominator when no AT start weight is present).</summary>

@@ -36,6 +36,9 @@ namespace MOO.DAL.ToLive.Models
         public short Shift_Nbr12 { get; set; }
         public DateTime Update_Date { get; set; } = DateTime.Now;
         public string Last_Update_By { get; set; }
+        public string? Authorized_By { get; set; }
+        public bool Defaults_Used { get; set; }
+        public byte? Shift_Half8 { get; set; }
         public double? Start_Wgt { get; set; }
         public double? Inch_1_Wgt { get; set; }
         public double? Inch_1_Pct { get { return Start_Wgt > 0 && Inch_1_Wgt.HasValue ? Math.Round(Inch_1_Wgt.GetValueOrDefault(0) / Start_Wgt.Value * 100, 4, MidpointRounding.AwayFromZero) : null; } }

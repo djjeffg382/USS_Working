@@ -132,32 +132,58 @@ namespace OM_Lab.Components.Pages.Lab
         private async Task PrevHalf() { SelectedHalf = SelectedHalf == 1 ? 2 : 1; await LoadData(); }
         private async Task NextHalf() { SelectedHalf = SelectedHalf == 2 ? 1 : 2; await LoadData(); }
 
-        private void SaveData()
+        private async Task SaveData()
         {
-            // TODO: Persist data to database (see issue #7)
-            notificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Info,
-                Summary = "Save",
-                Detail = "Save functionality not yet implemented.",
-                Duration = 3000
-            });
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            string username = authState.User.Identity?.Name ?? string.Empty;
+            await PersistDataAsync(username, authorizedBy: null);
 
             // M_LAB_4TH: lock the form after saving so the record cannot be modified.
             if (IsLabAnalyst)
                 IsReadOnly = true;
         }
 
-        private void SaveAndAuthorizeData()
+        private async Task SaveAndAuthorizeData()
         {
-            // TODO: Persist data and set Authorized_By to current user (see issues #7/#8)
-            notificationService.Notify(new NotificationMessage
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            string username = authState.User.Identity?.Name ?? string.Empty;
+            await PersistDataAsync(username, authorizedBy: username);
+        }
+
+        /// <summary>
+        /// Persists all line data to the database via <see cref="ITumblrsService"/>.
+        /// Passes <paramref name="authorizedBy"/> only when called from Save &amp; Authorize.
+        /// </summary>
+        private async Task PersistDataAsync(string username, string? authorizedBy)
+        {
+            try
             {
-                Severity = NotificationSeverity.Info,
-                Summary = "Save & Authorize",
-                Detail = "Save and Authorize functionality not yet implemented.",
-                Duration = 3000
-            });
+                await TumblrsService.SaveTumblrLinesAsync(
+                    SelectedDate, SelectedShift, SelectedHalf, Lines, username, authorizedBy);
+
+                // Reload so record IDs are up-to-date for any subsequent save.
+                await LoadData();
+
+                notificationService.Notify(new NotificationMessage
+                {
+                    Severity  = NotificationSeverity.Success,
+                    Summary   = authorizedBy != null ? "Saved & Authorized" : "Saved",
+                    Detail    = authorizedBy != null
+                        ? $"Data saved and authorized by {authorizedBy}."
+                        : "Data saved successfully.",
+                    Duration  = 3000
+                });
+            }
+            catch (Exception ex)
+            {
+                notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary  = "Save Failed",
+                    Detail   = ex.Message,
+                    Duration = 5000
+                });
+            }
         }
 
         /// <summary>

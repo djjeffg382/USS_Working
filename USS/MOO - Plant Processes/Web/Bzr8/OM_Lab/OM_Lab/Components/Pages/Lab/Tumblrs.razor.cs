@@ -159,9 +159,9 @@ namespace OM_Lab.Components.Pages.Lab
         /// <summary>
         /// Returns the HTML tabindex value so that tab order moves vertically down each line
         /// before advancing to the next line.
-        /// Fields per line: TotWt(1) + 6 mesh rows × 2 (BT+AT)(12) + PelTons(1) + GrateHrs(1) = 15.
+        /// Fields per line: TotWt_BT(1) + TotWt_AT(1) + 6 mesh rows × 2 (BT+AT)(12) + PelTons(1) + GrateHrs(1) = 16.
         /// </summary>
-        private const int FieldsPerLine = 15;
+        private const int FieldsPerLine = 16;
         private static int GetTabIndex(int line, int fieldIndex) => (line - 3) * FieldsPerLine + fieldIndex + 1;
     }
 }

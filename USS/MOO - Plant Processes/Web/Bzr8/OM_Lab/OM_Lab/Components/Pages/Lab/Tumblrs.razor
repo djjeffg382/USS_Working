@@ -256,28 +256,20 @@
                     <td colspan="2" class="calc-cell" style="text-align:center">@Lines[ln].Cum14Display</td>
                 }
             </tr>
-            <!-- PEL TONS -->
+            <!-- PEL TONS (read-only, from Agg shift data) -->
             <tr>
                 <td class="row-label">PEL TONS</td>
                 @for (int ln = 3; ln <= 7; ln++)
                 {
-                    int line = ln;
-                    <td colspan="2" class="entry-cell">
-                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].PelTons"
-                                       Format="N2" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)" tabindex="@GetTabIndex(line, 14)" Style="width:100px" />
-                    </td>
+                    <td colspan="2" class="calc-cell" style="text-align:center">@Lines[ln].PelTons?.ToString("N2")</td>
                 }
             </tr>
-            <!-- GRATE HRS -->
+            <!-- GRATE HRS (read-only, from Agg shift data) -->
             <tr>
                 <td class="row-label">GRATE HRS</td>
                 @for (int ln = 3; ln <= 7; ln++)
                 {
-                    int line = ln;
-                    <td colspan="2" class="entry-cell">
-                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].GrateHrs"
-                                       Format="N2" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)" tabindex="@GetTabIndex(line, 15)" Style="width:100px" />
-                    </td>
+                    <td colspan="2" class="calc-cell" style="text-align:center">@Lines[ln].GrateHrs?.ToString("N2")</td>
                 }
             </tr>
         </tbody>

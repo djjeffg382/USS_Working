@@ -65,3 +65,10 @@
     border-left: none;
     border-right: none;
 }
+
+/* Read-only indicator shown after M_LAB_4TH saves a record */
+.read-only-indicator {
+    color: #c62828;
+    font-size: 9pt;
+    margin-left: 8px;
+}

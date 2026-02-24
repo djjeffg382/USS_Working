@@ -1,6 +1,6 @@
 ﻿@page "/lab_tumblrs"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_COOR,M_OM_MET,M_OM_MGR,M_LAB_4TH")]
 
 @inject NotificationService notificationService
 
@@ -56,8 +56,16 @@
             </RadzenSelectBar>
             <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextHalf" />
         </div>
-        <div class="col-auto">
-            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="SaveData" />
+        <div class="col-auto d-flex align-items-center gap-1">
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="SaveData" Disabled="@IsReadOnly" />
+            @if (IsOmCoordinator)
+            {
+                <RadzenButton Text="Save && Authorize" Icon="verified" ButtonStyle="ButtonStyle.Success" Click="SaveAndAuthorizeData" Disabled="@IsReadOnly" />
+            }
+            @if (IsReadOnly)
+            {
+                <span class="read-only-indicator">&#x1F512; Read-only after save</span>
+            }
         </div>
     </div>
 
@@ -89,7 +97,7 @@
                     int line = ln;
                     <td colspan="2" class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].TotWt"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 0)" Style="width:100px" />
                     </td>
                 }
@@ -102,12 +110,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 1)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 2)" />
                     </td>
                 }
@@ -120,12 +128,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 3)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 4)" />
                     </td>
                 }
@@ -138,12 +146,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 5)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 6)" />
                     </td>
                 }
@@ -156,12 +164,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 7)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 8)" />
                     </td>
                 }
@@ -174,12 +182,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 9)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 10)" />
                     </td>
                 }
@@ -192,12 +200,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_BT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 11)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_AT"
-                                       Change="@(() => Recalc(line))" Format="N0"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@IsReadOnly"
                                        tabindex="@GetTabIndex(line, 12)" />
                     </td>
                 }
@@ -231,7 +239,7 @@
                     int line = ln;
                     <td colspan="2" class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].PelTons"
-                                       Format="N2" tabindex="@GetTabIndex(line, 13)" Style="width:100px" />
+                                       Format="N2" Disabled="@IsReadOnly" tabindex="@GetTabIndex(line, 13)" Style="width:100px" />
                     </td>
                 }
             </tr>
@@ -243,7 +251,7 @@
                     int line = ln;
                     <td colspan="2" class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].GrateHrs"
-                                       Format="N2" tabindex="@GetTabIndex(line, 14)" Style="width:100px" />
+                                       Format="N2" Disabled="@IsReadOnly" tabindex="@GetTabIndex(line, 14)" Style="width:100px" />
                     </td>
                 }
             </tr>

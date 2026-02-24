@@ -1,4 +1,7 @@
-﻿using Radzen;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using OM_Lab.Services;
+using Radzen;
 
 namespace OM_Lab.Components.Pages.Lab
 {
@@ -10,10 +13,76 @@ namespace OM_Lab.Components.Pages.Lab
 
         private Dictionary<int, TumblrLineData> Lines = new();
 
-        protected override void OnInitialized()
+        // ── Role state ────────────────────────────────────────────────────────
+        /// <summary>True when the current user is a 4th Floor Lab Analyst (M_LAB_4TH).</summary>
+        private bool IsLabAnalyst { get; set; }
+
+        /// <summary>True when the current user is an Ore Movement Coordinator role.</summary>
+        private bool IsOmCoordinator { get; set; }
+
+        /// <summary>
+        /// When true, all entry fields are disabled.
+        /// For M_LAB_4TH, this is set to true after a successful save.
+        /// </summary>
+        private bool IsReadOnly { get; set; }
+
+        [Inject]
+        private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = null!;
+
+        [Inject]
+        private ITumblrsService TumblrsService { get; set; } = null!;
+
+        protected override async Task OnInitializedAsync()
         {
+            await DetermineUserRoleAsync();
+            await ApplyRoleDefaultsAsync();
             InitLines();
-            base.OnInitialized();
+            await base.OnInitializedAsync();
+        }
+
+        /// <summary>Populates <see cref="IsLabAnalyst"/> and <see cref="IsOmCoordinator"/>
+        /// using the current user's claims.</summary>
+        private async Task DetermineUserRoleAsync()
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            IsLabAnalyst = user.IsInRole("M_LAB_4TH");
+            IsOmCoordinator = user.IsInRole("M_OM_ADMIN")
+                           || user.IsInRole("M_OM_COOR")
+                           || user.IsInRole("M_OM_MET")
+                           || user.IsInRole("M_OM_MGR");
+        }
+
+        /// <summary>Sets the default Date/Shift/Half based on role:
+        /// <list type="bullet">
+        ///   <item>M_LAB_4TH — defaults to the shift/half after the last entered record.</item>
+        ///   <item>OM Coordinator — defaults to the latest unauthorized record.</item>
+        /// </list>
+        /// </summary>
+        private async Task ApplyRoleDefaultsAsync()
+        {
+            try
+            {
+                if (IsLabAnalyst)
+                {
+                    var (date, shift, half) = await TumblrsService.GetNextShiftHalfAfterLastEntryAsync();
+                    SelectedDate = date;
+                    SelectedShift = shift;
+                    SelectedHalf = half;
+                }
+                else if (IsOmCoordinator)
+                {
+                    var (date, shift, half) = await TumblrsService.GetLatestUnauthorizedShiftHalfAsync();
+                    SelectedDate = date;
+                    SelectedShift = shift;
+                    SelectedHalf = half;
+                }
+            }
+            catch
+            {
+                // If the query fails (e.g. no DB in dev), keep today's defaults.
+            }
         }
 
         private void InitLines()
@@ -27,6 +96,9 @@ namespace OM_Lab.Components.Pages.Lab
         {
             // TODO: Load data from database for SelectedDate / SelectedShift / SelectedHalf
             InitLines();
+            // For M_LAB_4TH, reset read-only state when navigating to a new slot
+            if (IsLabAnalyst)
+                IsReadOnly = false;
             StateHasChanged();
         }
 
@@ -47,12 +119,28 @@ namespace OM_Lab.Components.Pages.Lab
 
         private void SaveData()
         {
-            // TODO: Persist data to database
+            // TODO: Persist data to database (see issue #7)
             notificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Info,
                 Summary = "Save",
                 Detail = "Save functionality not yet implemented.",
+                Duration = 3000
+            });
+
+            // M_LAB_4TH: lock the form after saving so the record cannot be modified.
+            if (IsLabAnalyst)
+                IsReadOnly = true;
+        }
+
+        private void SaveAndAuthorizeData()
+        {
+            // TODO: Persist data and set Authorized_By to current user (see issues #7/#8)
+            notificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Save & Authorize",
+                Detail = "Save and Authorize functionality not yet implemented.",
                 Duration = 3000
             });
         }

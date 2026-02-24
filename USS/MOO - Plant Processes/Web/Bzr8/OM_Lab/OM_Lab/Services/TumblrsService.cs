@@ -54,10 +54,8 @@ namespace OM_Lab.Services
         {
             return await Task.Run(() =>
             {
-                // Query recent records; records without an Authorized_By value (to be
-                // populated by issue #7) are candidates for coordinator authorization.
-                // Until Authorized_By is added to the model, all recent records are
-                // returned and the most recent is used as the default.
+                // Query recent records; records without an Authorized_By value are
+                // candidates for coordinator authorization.
                 var records = Lab_Phys_AnalysisSvc.GetByShiftDate(
                     LAB_PHYS_TYPE_BT,
                     DateTime.Today.AddMonths(-UNAUTHORIZED_LOOKBACK_MONTHS),

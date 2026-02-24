@@ -10,6 +10,13 @@ namespace OM_Lab.Services
 {
     public class TumblrsService : ITumblrsService
     {
+        private readonly IAggShiftLineService _aggShiftLineService;
+
+        public TumblrsService(IAggShiftLineService aggShiftLineService)
+        {
+            _aggShiftLineService = aggShiftLineService;
+        }
+
         // Lab_Phys_Type_Id 14 = Before Tumbles; used as the reference record type
         // for determining the last entered and latest unauthorized shift/half.
         private const int LAB_PHYS_TYPE_BT = 14;
@@ -79,7 +86,7 @@ namespace OM_Lab.Services
         /// <inheritdoc />
         public async Task<Dictionary<int, TumblrLineData>> GetTumblrLinesAsync(DateTime shiftDate, int shiftNumber, int half)
         {
-            return await Task.Run(() =>
+            var result = await Task.Run(() =>
             {
                 // Build an empty result for each pellet line.
                 var result = new Dictionary<int, TumblrLineData>();
@@ -142,6 +149,25 @@ namespace OM_Lab.Services
 
                 return result;
             });
+
+            // ── Pellet Tons & Grate Hours (display-only, from Agg shift data) ────────
+            // Agg2 is used for lines 3–5; Agg3 is used for lines 6–7.
+            // Fetch all lines in parallel to minimise wait time.
+            var aggTasks = new Dictionary<int, Task<(decimal? PelLtons, decimal? GrateHrs)>>();
+            for (int line = 3; line <= 7; line++)
+                aggTasks[line] = _aggShiftLineService.GetPelTonsAndGrateHrsAsync(
+                    shiftDate, (byte)shiftNumber, (byte)line);
+
+            await Task.WhenAll(aggTasks.Values);
+
+            foreach (var kvp in aggTasks)
+            {
+                var (pelLtons, grateHrs) = kvp.Value.Result;
+                result[kvp.Key].PelTons  = pelLtons;
+                result[kvp.Key].GrateHrs = grateHrs;
+            }
+
+            return result;
         }
 
         /// <summary>Converts a nullable <see cref="double"/> from a DAL model to a nullable

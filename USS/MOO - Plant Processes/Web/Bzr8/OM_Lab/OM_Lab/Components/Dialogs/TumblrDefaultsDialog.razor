@@ -1,0 +1,15 @@
+@inject Radzen.DialogService dialogService
+
+<div class="p-3 text-center">
+    <p class="mb-3">Select the default type to apply to this line:</p>
+    <div class="d-flex gap-3 justify-content-center">
+        <RadzenButton Text="Acid" Icon="science" ButtonStyle="ButtonStyle.Primary"
+                      Click="@(() => dialogService.Close("Acid"))" Style="min-width:90px" />
+        <RadzenButton Text="Flux" Icon="science" ButtonStyle="ButtonStyle.Warning"
+                      Click="@(() => dialogService.Close("Flux"))" Style="min-width:90px" />
+    </div>
+    <div class="mt-3">
+        <RadzenButton Text="Cancel" Icon="cancel" ButtonStyle="ButtonStyle.Secondary"
+                      Click="@(() => dialogService.Close(null))" />
+    </div>
+</div>

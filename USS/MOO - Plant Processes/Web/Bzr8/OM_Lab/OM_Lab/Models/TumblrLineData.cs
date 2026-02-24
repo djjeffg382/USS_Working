@@ -45,6 +45,13 @@ namespace OM_Lab.Models
         public decimal? PelTons { get; set; }
         public decimal? GrateHrs { get; set; }
 
+        // ── Defaults-Used state ────────────────────────────────────────────────
+        /// <summary>True when the "Defaults Used" checkbox is checked for this line.</summary>
+        public bool DefaultsUsed { get; set; }
+
+        /// <summary>"Acid" or "Flux" – set when <see cref="DefaultsUsed"/> is true, otherwise null.</summary>
+        public string? DefaultType { get; set; }
+
         // ── Calculated fields ─────────────────────────────────────────────────
         public decimal? Minus28M_BT => TotWt.HasValue
             ? TotWt - (Mesh916_BT.GetValueOrDefault()

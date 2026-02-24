@@ -18,7 +18,11 @@ namespace OM_Lab.Models
         public int AtAnalysisId { get; set; }
 
         // ── Editable fields ───────────────────────────────────────────────────
+        /// <summary>Start weight from the Before-Tumbles record (also used as the AT denominator when no AT start weight is present).</summary>
         public decimal? TotWt { get; set; }
+
+        /// <summary>Start weight from the After-Tumbles record. When null, AT calculations fall back to <see cref="TotWt"/>.</summary>
+        public decimal? TotWt_AT { get; set; }
 
         public decimal? Mesh916_BT { get; set; }
         public decimal? Mesh916_AT { get; set; }
@@ -51,14 +55,21 @@ namespace OM_Lab.Models
                       + Mesh28M_BT.GetValueOrDefault())
             : null;
 
-        public decimal? Minus28M_AT => TotWt.HasValue
-            ? TotWt - (Mesh916_AT.GetValueOrDefault()
-                      + Mesh12_AT.GetValueOrDefault()
-                      + Mesh716_AT.GetValueOrDefault()
-                      + Mesh38_AT.GetValueOrDefault()
-                      + Mesh14_AT.GetValueOrDefault()
-                      + Mesh28M_AT.GetValueOrDefault())
-            : null;
+        public decimal? Minus28M_AT
+        {
+            get
+            {
+                decimal? atStartWt = TotWt_AT ?? TotWt;
+                return atStartWt.HasValue
+                    ? atStartWt - (Mesh916_AT.GetValueOrDefault()
+                                  + Mesh12_AT.GetValueOrDefault()
+                                  + Mesh716_AT.GetValueOrDefault()
+                                  + Mesh38_AT.GetValueOrDefault()
+                                  + Mesh14_AT.GetValueOrDefault()
+                                  + Mesh28M_AT.GetValueOrDefault())
+                    : null;
+            }
+        }
 
         private decimal? Cum14_BT => TotWt.HasValue && TotWt > 0
             ? Math.Round(100m * (Mesh916_BT.GetValueOrDefault()
@@ -68,13 +79,20 @@ namespace OM_Lab.Models
                                + Mesh14_BT.GetValueOrDefault()) / TotWt.Value, 2)
             : null;
 
-        private decimal? Cum14_AT => TotWt.HasValue && TotWt > 0
-            ? Math.Round(100m * (Mesh916_AT.GetValueOrDefault()
-                               + Mesh12_AT.GetValueOrDefault()
-                               + Mesh716_AT.GetValueOrDefault()
-                               + Mesh38_AT.GetValueOrDefault()
-                               + Mesh14_AT.GetValueOrDefault()) / TotWt.Value, 2)
-            : null;
+        private decimal? Cum14_AT
+        {
+            get
+            {
+                decimal? atStartWt = TotWt_AT ?? TotWt;
+                return atStartWt.HasValue && atStartWt > 0
+                    ? Math.Round(100m * (Mesh916_AT.GetValueOrDefault()
+                                       + Mesh12_AT.GetValueOrDefault()
+                                       + Mesh716_AT.GetValueOrDefault()
+                                       + Mesh38_AT.GetValueOrDefault()
+                                       + Mesh14_AT.GetValueOrDefault()) / atStartWt.Value, 2)
+                    : null;
+            }
+        }
 
         public string Cum14Display
         {

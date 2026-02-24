@@ -124,9 +124,10 @@ namespace OM_Lab.Services
 
                     var ld = result[rec.Line_Nbr.Value];
                     ld.AtAnalysisId = rec.Lab_Phys_Analysis_Id;
-                    // Use AT start weight for TotWt only if the BT record did not supply it.
+                    ld.TotWt_AT   = ToDecimal(rec.Start_Wgt);
+                    // Keep backward-compatibility: when no BT record supplied TotWt, use the AT start weight.
                     if (!ld.TotWt.HasValue)
-                        ld.TotWt = ToDecimal(rec.Start_Wgt);
+                        ld.TotWt = ld.TotWt_AT;
                     ld.Mesh916_AT = ToDecimal(rec.Inch_9_16_Wgt);
                     ld.Mesh12_AT  = ToDecimal(rec.Inch_1_2_Wgt);
                     ld.Mesh716_AT = ToDecimal(rec.Inch_7_16_Wgt);

@@ -1,3 +1,253 @@
-﻿<h3>Tumblrs</h3>
+﻿@page "/lab_tumblrs"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_MET,M_OM_MGR")]
 
+@inject NotificationService notificationService
 
+<PageTitle>@Util.PROGRAM_TITLE - Tumblrs</PageTitle>
+<SectionContent SectionName="page-title">Tumblrs Entry</SectionContent>
+
+<style type="text/css">
+    /*  RadzenNumeric internal styles must be in the .razor file */
+    .tumblr-table .rz-numeric {
+        height: 22px !important;
+    }
+
+    .tumblr-table .rz-numeric-input {
+        height: 22px !important;
+        font-size: 9pt !important;
+        text-align: right !important;
+        padding: 0 3px !important;
+        background-color: #90EE90 !important;
+        color: black !important;
+    }
+</style>
+
+<RadzenCard class="m-2" style="width:fit-content">
+
+    <!-- Header: Date / Shift / Half navigation -->
+    <div class="row mb-3 align-items-center g-2">
+        <div class="col-auto d-flex align-items-center gap-1">
+            <strong>DATE:</strong>
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevDate" />
+            <RadzenDatePicker @bind-Value="SelectedDate" DateFormat="MM/dd/yy" Change="LoadData" Style="width:115px" />
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextDate" />
+        </div>
+        <div class="col-auto d-flex align-items-center gap-1">
+            <strong>SHIFT:</strong>
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevShift" />
+            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedShift" Change="LoadData">
+                <Items>
+                    <RadzenSelectBarItem Value="1" Text="1" />
+                    <RadzenSelectBarItem Value="2" Text="2" />
+                    <RadzenSelectBarItem Value="3" Text="3" />
+                </Items>
+            </RadzenSelectBar>
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextShift" />
+        </div>
+        <div class="col-auto d-flex align-items-center gap-1">
+            <strong>HALF:</strong>
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevHalf" />
+            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedHalf" Change="LoadData">
+                <Items>
+                    <RadzenSelectBarItem Value="1" Text="1" />
+                    <RadzenSelectBarItem Value="2" Text="2" />
+                </Items>
+            </RadzenSelectBar>
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextHalf" />
+        </div>
+        <div class="col-auto">
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="SaveData" />
+        </div>
+    </div>
+
+    <!-- Entry table -->
+    <table class="tumblr-table">
+        <thead>
+            <tr>
+                <th class="label-col"></th>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    <th colspan="2" class="line-header">LINE @ln</th>
+                }
+            </tr>
+            <tr>
+                <th class="label-col"></th>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    <th class="sub-header">BT</th>
+                    <th class="sub-header">AT</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <!-- TOT WT -->
+            <tr>
+                <td class="row-label">TOT WT</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td colspan="2" class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].TotWt"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 0)" Style="width:100px" />
+                    </td>
+                }
+            </tr>
+            <!-- +9/16 -->
+            <tr>
+                <td class="row-label">+9/16</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 1)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 2)" />
+                    </td>
+                }
+            </tr>
+            <!-- +1/2 -->
+            <tr>
+                <td class="row-label">+1/2</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 3)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 4)" />
+                    </td>
+                }
+            </tr>
+            <!-- +7/16 -->
+            <tr>
+                <td class="row-label">+7/16</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 5)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 6)" />
+                    </td>
+                }
+            </tr>
+            <!-- +3/8 -->
+            <tr>
+                <td class="row-label">+3/8</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 7)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 8)" />
+                    </td>
+                }
+            </tr>
+            <!-- +1/4 -->
+            <tr>
+                <td class="row-label">+1/4</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 9)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 10)" />
+                    </td>
+                }
+            </tr>
+            <!-- +28M -->
+            <tr>
+                <td class="row-label">+28M</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_BT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 11)" />
+                    </td>
+                    <td class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_AT"
+                                       Change="@(() => Recalc(line))" Format="N0"
+                                       tabindex="@GetTabIndex(line, 12)" />
+                    </td>
+                }
+            </tr>
+            <!-- Separator note -->
+            <tr>
+                <td colspan="11" class="calc-separator-note">minus 28 mesh numbers are calculated</td>
+            </tr>
+            <!-- -28M (calculated, yellow) -->
+            <tr>
+                <td class="row-label">-28M</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    <td class="calc-cell">@Lines[ln].Minus28M_BT?.ToString("N0")</td>
+                    <td class="calc-cell">@Lines[ln].Minus28M_AT?.ToString("N0")</td>
+                }
+            </tr>
+            <!-- CUM+1/4 (calculated, yellow) -->
+            <tr>
+                <td class="row-label">CUM+1/4<br /><span style="font-size:8pt">4-hr cum.</span></td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    <td colspan="2" class="calc-cell" style="text-align:center">@Lines[ln].Cum14Display</td>
+                }
+            </tr>
+            <!-- PEL TONS -->
+            <tr>
+                <td class="row-label">PEL TONS</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td colspan="2" class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].PelTons"
+                                       Format="N2" tabindex="@GetTabIndex(line, 13)" Style="width:100px" />
+                    </td>
+                }
+            </tr>
+            <!-- GRATE HRS -->
+            <tr>
+                <td class="row-label">GRATE HRS</td>
+                @for (int ln = 3; ln <= 7; ln++)
+                {
+                    int line = ln;
+                    <td colspan="2" class="entry-cell">
+                        <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].GrateHrs"
+                                       Format="N2" tabindex="@GetTabIndex(line, 14)" Style="width:100px" />
+                    </td>
+                }
+            </tr>
+        </tbody>
+    </table>
+
+</RadzenCard>

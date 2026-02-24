@@ -1,4 +1,6 @@
+using OM_Lab.Models;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OM_Lab.Services
@@ -18,5 +20,17 @@ namespace OM_Lab.Services
         /// Ore Movement Coordinator roles to the next record needing authorization.
         /// </summary>
         Task<(DateTime date, int shift, int half)> GetLatestUnauthorizedShiftHalfAsync();
+
+        /// <summary>
+        /// Loads the Before-Tumbles and After-Tumbles <c>Lab_Phys_Analysis</c> records for
+        /// lines 3–7 that fall within the specified shift date, shift number, and within-shift
+        /// half (1 or 2).  Returns a dictionary keyed by line number; lines with no database
+        /// record are returned with all weight fields set to <c>null</c> so the UI can present
+        /// empty entry fields for insertion.
+        /// </summary>
+        /// <param name="shiftDate">The 8-hour shift date (Shift_Date8).</param>
+        /// <param name="shiftNumber">Shift number 1–3.</param>
+        /// <param name="half">Within-shift half: 1 (first 4 hrs) or 2 (second 4 hrs).</param>
+        Task<Dictionary<int, TumblrLineData>> GetTumblrLinesAsync(DateTime shiftDate, int shiftNumber, int half);
     }
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MOO.DAL.ToLive.Models
 {
-    public class People
+    public sealed class People
     {
         [Key]
         public int Person_Id { get; set; }
@@ -23,7 +23,15 @@ namespace MOO.DAL.ToLive.Models
         public string Base_Level_Group { get; set; }
         public string Cost_Center { get; set; }
         public string Status_Ind { get; set; }
+
+        /// <summary>
+        /// Comma separated list of windows ad Accounts associated with this person
+        /// </summary>
         public string Windows_Ad_Account { get; set; }
+
+        public IEnumerable<string> Windows_Ad_Account_List => Windows_Ad_Account.Split(",").Select(x => x.Trim())
+;
+
         public string Mobile_Number { get; set; }
         public string Office_Ext { get; set; }
         public string Home_Number { get; set; }

@@ -81,13 +81,24 @@ namespace DAL_UnitTest.Tolive
         [Fact]
         public void RentalTest()
         {
-            var rentalUpt = DAL.Services.FS_RentalEquipSvc.Get(160);
+            var rentalUpt = DAL.Services.Rental_EquipSvc.Get(160);
             rentalUpt.Comments += " Testing";
             rentalUpt.Rental_Equip_Id = 0;
-            DAL.Services.FS_RentalEquipSvc.Insert(rentalUpt);
+            DAL.Services.Rental_EquipSvc.Insert(rentalUpt);
             rentalUpt.Plantloc = MOO.Plant.Keetac;
-            var rentalList = DAL.Services.FS_RentalEquipSvc.GetAll();
+            var rentalList = DAL.Services.Rental_EquipSvc.GetAll();
             Assert.NotEmpty(rentalList);
+        }
+
+        [Fact]
+        public async Task RentalEquipLocationTest()
+        {
+            var rentalLoc = await DAL.Services.Rental_Equip_LocationSvc.GetAsync(MOO.Plant.Minntac, "Mine");
+            Assert.NotNull(rentalLoc);
+
+            var rentalLocList = await DAL.Services.Rental_Equip_LocationSvc.GetAllAsync();
+            
+            Assert.NotEmpty(rentalLocList);
         }
 
         [Fact]

@@ -26,7 +26,7 @@ namespace DAL_UnitTest.Tolive
                 Lab_Chem_Type = lct,
                 Analysis_Date = DateTime.Now,
                 Shift_Date12 = DateTime.Today,
-                Shift_Date8 = DateTime.Today,
+                Shift_Date8 = DateTime.Today,                
                 Shift_Nbr12 = 2,
                 Shift_Nbr8 = 1,
                 Fe = 1.11
@@ -46,17 +46,21 @@ namespace DAL_UnitTest.Tolive
         [Fact]
         public void TestLabPhysAnalysis()
         {
-            var lpt = DAL.Services.Lab_Phys_TypeSvc.Get(1);
+            const short LAB_PHYS_TYPE_ID = 14;
+
+            var lpt = DAL.Services.Lab_Phys_TypeSvc.Get(LAB_PHYS_TYPE_ID);
             Assert.NotNull(lpt);
 
             DAL.Models.Lab_Phys_Analysis lpa = new()
             {
                 Lab_Phys_Type = lpt,
+                Line_Nbr = 1,
                 Analysis_Date = DateTime.Now,
                 Shift_Date12 = DateTime.Today,
                 Shift_Date8 = DateTime.Today,
                 Shift_Nbr12 = 1,
                 Shift_Nbr8 = 3,
+                Shift_Half8 = 1,
                 Start_Wgt = 51.3,
                 Inch_5_8_Wgt = 12.4,
                 Inch_9_16_Wgt = 20.2,
@@ -67,7 +71,7 @@ namespace DAL_UnitTest.Tolive
             };
             Assert.Equal(1, DAL.Services.Lab_Phys_AnalysisSvc.Insert(lpa));
 
-            var lsct = DAL.Services.Lab_Phys_AnalysisSvc.GetByShiftDate(1, DateTime.Today.AddDays(-4), DateTime.Today.AddDays(-4), DAL.Enums.ShiftType.ShiftType12Hour, 1);
+            var lsct = DAL.Services.Lab_Phys_AnalysisSvc.GetByShiftDate(LAB_PHYS_TYPE_ID, DateTime.Today.AddDays(-4), DateTime.Today.AddDays(4), DAL.Enums.ShiftType.ShiftType12Hour, 1);
             Assert.NotEmpty(lsct);
             lpa.Inch_7_16_Wgt = (double)25.5;
             Assert.Equal(1, DAL.Services.Lab_Phys_AnalysisSvc.Update(lpa));

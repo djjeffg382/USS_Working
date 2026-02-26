@@ -47,7 +47,7 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddScoped<Radzen.DialogService>();
 builder.Services.AddScoped<OM_Lab.Services.ICompTestService, OM_Lab.Services.CompTestService>();
 builder.Services.AddScoped<OM_Lab.Services.IAggShiftLineService, OM_Lab.Services.AggShiftLineService>();
-builder.Services.AddScoped<OM_Lab.Services.ITumblrsService, OM_Lab.Services.TumblrsService>();
+builder.Services.AddScoped<OM_Lab.Services.ITumblesService, OM_Lab.Services.TumblesService>();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
     options.Name = Util.APP_THEME_NAME; // The name of the cookie

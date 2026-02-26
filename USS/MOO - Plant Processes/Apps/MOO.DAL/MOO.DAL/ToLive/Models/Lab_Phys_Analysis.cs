@@ -36,9 +36,12 @@ namespace MOO.DAL.ToLive.Models
         public short Shift_Nbr12 { get; set; }
         public DateTime Update_Date { get; set; } = DateTime.Now;
         public string Last_Update_By { get; set; }
-        public string? Authorized_By { get; set; }
-        public bool Defaults_Used { get; set; }
-        public byte? Shift_Half8 { get; set; }
+
+        public short? Shift_Half8 { get; set; }
+        public string Authorized_By { get; set; }
+        public bool Defaults_Used { get; set; } = false;
+
+
         public double? Start_Wgt { get; set; }
         public double? Inch_1_Wgt { get; set; }
         public double? Inch_1_Pct { get { return Start_Wgt > 0 && Inch_1_Wgt.HasValue ? Math.Round(Inch_1_Wgt.GetValueOrDefault(0) / Start_Wgt.Value * 100, 4, MidpointRounding.AwayFromZero) : null; } }
@@ -109,6 +112,7 @@ namespace MOO.DAL.ToLive.Models
         {
             Shift_Date8 = MOO.Shifts.Shift8.ShiftDate(Analysis_Date, plant);
             Shift_Nbr8 = MOO.Shifts.Shift8.ShiftNumber(Analysis_Date, plant);
+            Shift_Half8 = MOO.Shifts.Shift8.HalfShift(Analysis_Date, plant);
         }
     }
 }

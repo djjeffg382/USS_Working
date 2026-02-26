@@ -13,7 +13,23 @@ namespace MOO.DAL.ToLive.Enums.LineupMeeting
         ResourceNeeds,
         Quality,
         Recognition,
+
+        [Obsolete("Removed Feb 2026")]
         Cost,
+
+        EnvNoxTons,
+        EnvDailyNox,
+
+        L3_Speed_Current,
+        L3_Speed_Reason,
+        L4_Speed_Current,
+        L4_Speed_Reason,
+        L5_Speed_Current,
+        L5_Speed_Reason,
+        L6_Speed_Current,
+        L6_Speed_Reason,
+        L7_Speed_Current,
+        L7_Speed_Reason,
 
         OpS2VacFilterRatio,
         OpS3VacFilterRatio,

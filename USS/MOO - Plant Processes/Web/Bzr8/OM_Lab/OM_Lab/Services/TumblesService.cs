@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace OM_Lab.Services
 {
-    public class TumblrsService : ITumblrsService
+    public class TumblesService : ITumblesService
     {
         private readonly IAggShiftLineService _aggShiftLineService;
 
-        public TumblrsService(IAggShiftLineService aggShiftLineService)
+        public TumblesService(IAggShiftLineService aggShiftLineService)
         {
             _aggShiftLineService = aggShiftLineService;
         }
@@ -121,6 +121,9 @@ namespace OM_Lab.Services
                     ld.Mesh38_BT  = ToDecimal(rec.Inch_3_8_Wgt);
                     ld.Mesh14_BT  = ToDecimal(rec.Inch_1_4_Wgt);
                     ld.Mesh28M_BT = ToDecimal(rec.Mesh_28_30_Wgt);
+
+                    // Mark BT authorization state
+                    ld.BtAuthorized = !string.IsNullOrEmpty(rec.Authorized_By);
                 }
 
                 // ── After Tumbles ─────────────────────────────────────────────
@@ -145,6 +148,9 @@ namespace OM_Lab.Services
                     ld.Mesh38_AT  = ToDecimal(rec.Inch_3_8_Wgt);
                     ld.Mesh14_AT  = ToDecimal(rec.Inch_1_4_Wgt);
                     ld.Mesh28M_AT = ToDecimal(rec.Mesh_28_30_Wgt);
+
+                    // Mark AT authorization state
+                    ld.AtAuthorized = !string.IsNullOrEmpty(rec.Authorized_By);
                 }
 
                 return result;
@@ -153,10 +159,14 @@ namespace OM_Lab.Services
             // ── Pellet Tons & Grate Hours (display-only, from Agg shift data) ────────
             // Agg2 is used for lines 3–5; Agg3 is used for lines 6–7.
             // Fetch all lines in parallel to minimise wait time.
-            var aggTasks = new Dictionary<int, Task<(decimal? PelLtons, decimal? GrateHrs)>>();
-            for (int line = 3; line <= 7; line++)
-                aggTasks[line] = _aggShiftLineService.GetPelTonsAndGrateHrsAsync(
-                    shiftDate, (byte)shiftNumber, (byte)line);
+            var aggTasks = new Dictionary<int, Task<(decimal? PelLtons, decimal? GrateHrs)>>
+            {
+                { 3, _aggShiftLineService.GetPelTonsAndGrateHrsAsync(shiftDate, (byte)shiftNumber, 3) },
+                { 4, _aggShiftLineService.GetPelTonsAndGrateHrsAsync(shiftDate, (byte)shiftNumber, 4) },
+                { 5, _aggShiftLineService.GetPelTonsAndGrateHrsAsync(shiftDate, (byte)shiftNumber, 5) },
+                { 6, _aggShiftLineService.GetPelTonsAndGrateHrsAsync(shiftDate, (byte)shiftNumber, 6) },
+                { 7, _aggShiftLineService.GetPelTonsAndGrateHrsAsync(shiftDate, (byte)shiftNumber, 7) }
+            };
 
             await Task.WhenAll(aggTasks.Values);
 

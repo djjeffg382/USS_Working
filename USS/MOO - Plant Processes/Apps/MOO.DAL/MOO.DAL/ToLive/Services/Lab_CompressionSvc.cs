@@ -136,6 +136,11 @@ namespace MOO.DAL.ToLive.Services
             RetVal.Comp300 = (double?)Util.GetRowVal(row, $"{ColPrefix}comp300");
             RetVal.Average = (double?)Util.GetRowVal(row, $"{ColPrefix}average");
             RetVal.Shift_Half = (short?)Util.GetRowVal(row, $"{ColPrefix}shift_half");
+            string labCompType = (string)Util.GetRowVal(row, $"{ColPrefix}compression_type");
+            if(!string.IsNullOrEmpty(labCompType) )
+                RetVal.Compression_Type = Enum.Parse<Lab_Compression.LabCompressionType>(labCompType);
+            RetVal.Comments = (string)Util.GetRowVal(row, $"{ColPrefix}comments");
+
             return RetVal;
         }
 

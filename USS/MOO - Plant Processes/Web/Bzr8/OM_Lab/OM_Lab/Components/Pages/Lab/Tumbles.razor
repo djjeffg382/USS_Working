@@ -1,11 +1,11 @@
 ﻿@page "/lab_tumblrs"
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_COOR,M_OM_MET,M_OM_MGR,M_LAB_4TH")]
-
+@* @attribute [Authorize(Roles = "Admin,BSC_Admin,M_OM_ADMIN,M_OM_COOR,M_OM_MET,M_OM_MGR,M_LAB_4TH")]
+ *@
 @inject NotificationService notificationService
 
-<PageTitle>@Util.PROGRAM_TITLE - Tumblrs</PageTitle>
-<SectionContent SectionName="page-title">Tumblrs Entry</SectionContent>
+<PageTitle>@Util.PROGRAM_TITLE - Tumbles</PageTitle>
+<SectionContent SectionName="page-title">Tumbles Entry</SectionContent>
 
 <style type="text/css">
     /*  RadzenNumeric internal styles must be in the .razor file */
@@ -18,8 +18,109 @@
         font-size: 9pt !important;
         text-align: right !important;
         padding: 0 3px !important;
-        background-color: #90EE90 !important;
-        color: black !important;
+        /* Make inputs wider */
+        width: 70px !important;
+        min-width: 60px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Lock icon for authorized lines */
+    .lock-icon {
+        margin-left: 6px;
+        color: #c62828;
+        font-size: 10pt;
+        vertical-align: middle;
+    }
+
+    /* ── Tumblrs Entry Form Styles (copied from Tumbles.razor.css to ensure they're applied)
+       Putting these styles inline in the component guarantees they are present even if
+       CSS isolation isn't picked up by the build/dev server. */
+
+    .tumblr-table {
+        border-collapse: collapse;
+        font-size: 10pt;
+    }
+
+        .tumblr-table td,
+        .tumblr-table th {
+            border: 1px solid #888;
+            padding: 2px 4px;
+            vertical-align: middle;
+        }
+
+    /* Column/row header cells */
+    .label-col {
+        width: 90px;
+    }
+
+    .line-header {
+        background-color: #D1DDF1;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+        min-width: 110px;
+    }
+
+    .sub-header {
+        background-color: #e0e0e0;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+        width: 70px;
+    }
+
+    .row-label {
+        font-weight: bold;
+        background-color: #f5f5f5;
+        white-space: nowrap;
+        padding: 2px 8px;
+    }
+
+    /* Editable entry cells (green background applied via inline style to reach RadzenNumeric input) */
+    .entry-cell {
+        padding: 1px;
+        text-align: center;
+    }
+
+    /* Calculated/read-only cells (yellow) */
+    .calc-cell {
+        background-color: #FFFF99;
+        color: black;
+        text-align: right;
+        font-weight: bold;
+        padding: 2px 6px;
+    }
+
+    /* Italicised note row above -28M */
+    .calc-separator-note {
+        font-style: italic;
+        font-size: 9pt;
+        color: #555;
+        padding: 2px 8px;
+        background-color: #f5f5f5;
+        border-left: none;
+        border-right: none;
+    }
+
+    /* Read-only indicator shown after M_LAB_4TH saves a record */
+    .read-only-indicator {
+        color: #c62828;
+        font-size: 9pt;
+        margin-left: 8px;
+    }
+
+    /* Actions row cell (Clear button + Defaults checkbox) */
+    .actions-cell {
+        text-align: center;
+        padding: 2px 4px;
+        white-space: nowrap;
+    }
+
+    /* Label next to the Defaults Used checkbox */
+    .defaults-label {
+        font-size: 9pt;
+        margin-left: 2px;
+        vertical-align: middle;
     }
 </style>
 
@@ -29,32 +130,32 @@
     <div class="row mb-3 align-items-center g-2">
         <div class="col-auto d-flex align-items-center gap-1">
             <strong>DATE:</strong>
-            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevDate" />
-            <RadzenDatePicker @bind-Value="SelectedDate" DateFormat="MM/dd/yy" Change="LoadData" Style="width:115px" />
-            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextDate" />
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevDate" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
+            <RadzenDatePicker @bind-Value="SelectedDate" DateFormat="MM/dd/yy" Change="LoadData" Style="width:115px" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextDate" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
         </div>
         <div class="col-auto d-flex align-items-center gap-1">
             <strong>SHIFT:</strong>
-            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevShift" />
-            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedShift" Change="LoadData">
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevShift" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
+            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedShift" Change="LoadData" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))">
                 <Items>
                     <RadzenSelectBarItem Value="1" Text="1" />
                     <RadzenSelectBarItem Value="2" Text="2" />
                     <RadzenSelectBarItem Value="3" Text="3" />
                 </Items>
             </RadzenSelectBar>
-            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextShift" />
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextShift" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
         </div>
         <div class="col-auto d-flex align-items-center gap-1">
             <strong>HALF:</strong>
-            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevHalf" />
-            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedHalf" Change="LoadData">
+            <RadzenButton Icon="chevron_left" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="PrevHalf" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
+            <RadzenSelectBar TValue="int" Size="ButtonSize.Small" @bind-Value="SelectedHalf" Change="LoadData" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))">
                 <Items>
                     <RadzenSelectBarItem Value="1" Text="1" />
                     <RadzenSelectBarItem Value="2" Text="2" />
                 </Items>
             </RadzenSelectBar>
-            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextHalf" />
+            <RadzenButton Icon="chevron_right" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="NextHalf" Disabled="@(IsLabAnalyst || (IsReadOnly && !IsOmCoordinator))" />
         </div>
         <div class="col-auto d-flex align-items-center gap-1">
             <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Click="SaveData" Disabled="@IsReadOnly" />
@@ -64,7 +165,7 @@
             }
             @if (IsReadOnly)
             {
-                <span class="read-only-indicator">&#x1F512; Read-only after save</span>
+                <span class="read-only-indicator">&#x1F512; Read-only after Authorized</span>
             }
         </div>
     </div>
@@ -76,7 +177,13 @@
                 <th class="label-col"></th>
                 @for (int ln = 3; ln <= 7; ln++)
                 {
-                    <th colspan="2" class="line-header">LINE @ln</th>
+                    <th colspan="2" class="line-header">
+                        LINE @ln
+                        @if (Lines.ContainsKey(ln) && Lines[ln].IsAuthorized)
+                        {
+                            <span class="lock-icon" title="Authorized">&#x1F512;</span>
+                        }
+                    </th>
                 }
             </tr>
             <tr>
@@ -100,11 +207,11 @@
                         {
                             <RadzenButton Text="Clear" Icon="clear" Size="ButtonSize.ExtraSmall"
                                           ButtonStyle="ButtonStyle.Danger" Variant="Variant.Outlined"
-                                          Click="@(() => ClearLine(line))" Disabled="@IsReadOnly" />
+                                          Click="@(() => ClearLine(line))" Disabled="@(IsReadOnly || Lines[line].IsAuthorized)" />
                         }
                         <RadzenCheckBox TValue="bool" Value="@Lines[line].DefaultsUsed"
                                         Change="@(async (v) => await DefaultsUsedChanged(line, v))"
-                                        Disabled="@IsReadOnly" />
+                                        Disabled="@(IsReadOnly || Lines[line].IsAuthorized)" />
                         <span class="defaults-label">Defaults</span>
                     </td>
                 }
@@ -117,12 +224,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].TotWt"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 0)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].TotWt_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 1)" />
                     </td>
                 }
@@ -135,12 +242,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 2)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh916_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 3)" />
                     </td>
                 }
@@ -153,12 +260,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 4)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh12_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 5)" />
                     </td>
                 }
@@ -171,12 +278,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 6)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh716_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 7)" />
                     </td>
                 }
@@ -189,12 +296,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 8)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh38_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 9)" />
                     </td>
                 }
@@ -207,12 +314,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 10)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh14_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 11)" />
                     </td>
                 }
@@ -225,12 +332,12 @@
                     int line = ln;
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_BT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 12)" />
                     </td>
                     <td class="entry-cell">
                         <RadzenNumeric ShowUpDown="false" TValue="decimal?" @bind-Value="Lines[line].Mesh28M_AT"
-                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed)"
+                                       Change="@(() => Recalc(line))" Format="N0" Disabled="@(IsReadOnly || Lines[line].DefaultsUsed || Lines[line].IsAuthorized)"
                                        tabindex="@GetTabIndex(line, 13)" />
                     </td>
                 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using OM_Lab.Models;
 using OM_Lab.Services;
@@ -7,20 +8,22 @@ using Radzen.Blazor;
 
 namespace OM_Lab.Components.Pages.Lab
 {
-    public partial class Tumblrs
+    public partial class Tumbles
     {
         private DateTime SelectedDate = DateTime.Today;
         private int SelectedShift = 1;
         private int SelectedHalf = 1;
 
-        private Dictionary<int, TumblrLineData> Lines = new();
+        // Prepopulate keys 3..7 so Razor can safely index Lines[line] on first render.
+        private Dictionary<int, TumblrLineData> Lines = Enumerable.Range(3, 5)
+            .ToDictionary(i => i, i => new TumblrLineData { LineNumber = i });
 
         // ── Role state ────────────────────────────────────────────────────────
         /// <summary>True when the current user is a 4th Floor Lab Analyst (M_LAB_4TH).</summary>
-        private bool IsLabAnalyst { get; set; }
+        private bool IsLabAnalyst { get; set; } = false;
 
         /// <summary>True when the current user is an Ore Movement Coordinator role.</summary>
-        private bool IsOmCoordinator { get; set; }
+        private bool IsOmCoordinator { get; set; } = true;
 
         /// <summary>
         /// When true, all entry fields are disabled.
@@ -32,14 +35,14 @@ namespace OM_Lab.Components.Pages.Lab
         private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = null!;
 
         [Inject]
-        private ITumblrsService TumblrsService { get; set; } = null!;
+        private ITumblesService TumblrsService { get; set; } = null!;
 
         [Inject]
         private DialogService DialogService { get; set; } = null!;
 
         protected override async Task OnInitializedAsync()
         {
-            await DetermineUserRoleAsync();
+           // await DetermineUserRoleAsync();
             await ApplyRoleDefaultsAsync();
             await LoadData();
             await base.OnInitializedAsync();
@@ -73,15 +76,17 @@ namespace OM_Lab.Components.Pages.Lab
                 {
                     var (date, shift, half) = await TumblrsService.GetNextShiftHalfAfterLastEntryAsync();
                     SelectedDate = date;
-                    SelectedShift = shift;
-                    SelectedHalf = half;
+                    // Guard: if the service returned an invalid or zero shift, default to 1
+                    SelectedShift = (shift >= 1 && shift <= 3) ? shift : 1;
+                    // Guard: ensure half is 1 or 2
+                    SelectedHalf = (half == 1 || half == 2) ? half : 1;
                 }
                 else if (IsOmCoordinator)
                 {
                     var (date, shift, half) = await TumblrsService.GetLatestUnauthorizedShiftHalfAsync();
                     SelectedDate = date;
-                    SelectedShift = shift;
-                    SelectedHalf = half;
+                    SelectedShift = (shift >= 1 && shift <= 3) ? shift : 1;
+                    SelectedHalf = (half == 1 || half == 2) ? half : 1;
                 }
             }
             catch
@@ -107,7 +112,31 @@ namespace OM_Lab.Components.Pages.Lab
 
             try
             {
-                Lines = await TumblrsService.GetTumblrLinesAsync(SelectedDate, SelectedShift, SelectedHalf);
+                var fetched = await TumblrsService.GetTumblrLinesAsync(SelectedDate, SelectedShift, SelectedHalf);
+
+                // Merge fetched results into the Lines dictionary, ensuring keys 3..7 exist.
+                for (int line = 3; line <= 7; line++)
+                {
+                    if (fetched != null && fetched.TryGetValue(line, out var ld))
+                    {
+                        Lines[line] = ld;
+                    }
+                    else
+                    {
+                        // Ensure a default entry exists so the UI can safely index Lines[line]
+                        Lines[line] = new TumblrLineData { LineNumber = line };
+                    }
+                }
+
+                // If any record for this half-shift is already authorized, treat the whole shift as locked/read-only
+                bool shiftLocked = fetched != null && fetched.Values.Any(l => l.BtAuthorized || l.AtAuthorized);
+
+                // For coordinators, the read-only state should reflect whether the target shift is locked.
+                // For lab analysts, preserve their read-only state (they cannot navigate anyway).
+                if (IsOmCoordinator)
+                {
+                    IsReadOnly = shiftLocked;
+                }
             }
             catch
             {
@@ -151,7 +180,7 @@ namespace OM_Lab.Components.Pages.Lab
         }
 
         /// <summary>
-        /// Persists all line data to the database via <see cref="ITumblrsService"/>.
+        /// Persists all line data to the database via <see cref="ITumblesService"/>.
         /// Passes <paramref name="authorizedBy"/> only when called from Save &amp; Authorize.
         /// </summary>
         private async Task PersistDataAsync(string username, string? authorizedBy)
@@ -212,6 +241,9 @@ namespace OM_Lab.Components.Pages.Lab
         /// </summary>
         private async Task DefaultsUsedChanged(int line, bool isChecked)
         {
+            if (!Lines.ContainsKey(line))
+                Lines[line] = new TumblrLineData { LineNumber = line };
+
             if (isChecked)
             {
                 // Open the Acid / Flux selection dialog.

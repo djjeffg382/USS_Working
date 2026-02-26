@@ -136,7 +136,7 @@ namespace MOO.DAL.ToLive.Services
             sql.AppendLine("    ROUND(asl.comp600_m200,4) comp600_m200, ROUND(asl.pel_act_ltons,4) pel_act_ltons, ");
             sql.AppendLine("    ROUND(asl.pel_adj_ltons,4) pel_adj_ltons, ROUND(asl.u_grate_temp,4) u_grate_temp,a3s.report_date, a3s.shift");
             sql.AppendLine($"FROM tolive.agg3_shift_line asl");
-            sql.AppendLine($"INNER JOIN agg3_shift a3s");
+            sql.AppendLine($"INNER JOIN tolive.agg3_shift a3s");
             sql.AppendLine($"ON a3s.agg3_shift_id = asl.agg3_shift_id");
             return sql.ToString();
         }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace OM_Lab.Services
 {
-    public interface ITumblrsService
+    public interface ITumblesService
     {
         /// <summary>
         /// Returns the next shift date, shift number, and half (1 or 2) after

@@ -62,7 +62,7 @@ namespace DAL_UnitTest.Tolive
             var compList = DAL.Services.Lab_CompressionSvc.GetByDateAsync(DateTime.Today.AddYears(-5), DateTime.Today.AddYears(1)).GetAwaiter().GetResult();
             Assert.NotEmpty(compList);
             //test single get
-            comp = DAL.Services.Lab_CompressionSvc.GetAsync(compList[0].Comp_Id).GetAwaiter().GetResult();
+            comp = DAL.Services.Lab_CompressionSvc.GetAsync(NewSeq).GetAwaiter().GetResult();
             Assert.NotNull(comp);
 
             //test selecting detail
@@ -77,7 +77,8 @@ namespace DAL_UnitTest.Tolive
             result = DAL.Services.Lab_Compression_DtlSvc.UpdateAsync(compDtl).GetAwaiter().GetResult();
             Assert.Equal(1, result);  //should return 1 for records updated
 
-            comp.Shift = 1;
+            comp.Shift = 3;
+            comp.Compression_Type = DAL.Models.Lab_Compression.LabCompressionType.MtcPellet;
             result = DAL.Services.Lab_CompressionSvc.UpdateAsync(comp).GetAwaiter().GetResult();
             Assert.Equal(1, result);  //should return 1 for records updated
 

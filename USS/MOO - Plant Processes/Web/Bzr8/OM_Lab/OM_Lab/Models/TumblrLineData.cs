@@ -2,7 +2,7 @@ namespace OM_Lab.Models
 {
     /// <summary>
     /// Holds all editable and calculated values for one pellet line (3–7) in a single Tumblrs
-    /// half-shift entry.  Instances of this class are populated by <see cref="Services.ITumblrsService"/>
+    /// half-shift entry.  Instances of this class are populated by <see cref="Services.ITumblesService"/>
     /// from the <c>Lab_Phys_Analysis</c> table (BT = type 14, AT = type 15) and are used
     /// directly by the Tumblrs Blazor page for binding.
     /// </summary>
@@ -22,6 +22,16 @@ namespace OM_Lab.Models
 
         /// <summary>Analysis date of the After-Tumbles record; null for new (unpersisted) records.</summary>
         public DateTime? AtAnalysisDate { get; set; }
+
+        // ── Authorization flags (populated by service) ───────────────────────
+        /// <summary>True when the Before-Tumbles record is authorized.</summary>
+        public bool BtAuthorized { get; set; }
+
+        /// <summary>True when the After-Tumbles record is authorized.</summary>
+        public bool AtAuthorized { get; set; }
+
+        /// <summary>True when either BT or AT record is authorized; UI should render the line read-only in this case.</summary>
+        public bool IsAuthorized => BtAuthorized || AtAuthorized;
 
         // ── Editable fields ───────────────────────────────────────────────────
         /// <summary>Start weight from the Before-Tumbles record (also used as the AT denominator when no AT start weight is present).</summary>

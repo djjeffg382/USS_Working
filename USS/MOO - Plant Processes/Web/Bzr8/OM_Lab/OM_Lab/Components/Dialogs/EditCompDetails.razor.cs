@@ -19,6 +19,9 @@ namespace OM_Lab.Components.Dialogs
         [Inject]
         protected ICompTestService CompTestService { get; set; } = null!;
 
+        [Inject]
+        protected NotificationService NotificationService { get; set; } = null!;
+
         protected List<Lab_Compression_Dtl> CompressionDetails { get; set; } = new();
         protected List<List<Lab_Compression_Dtl>> CompressionBuckets { get; set; } = new();
         protected double? MinCompLbs { get; set; }
@@ -60,8 +63,21 @@ namespace OM_Lab.Components.Dialogs
             DialogService.Close(null);
         }
 
-        protected async void OnValidSubmit(Lab_Compression compTest)
+        protected async Task OnValidSubmit(Lab_Compression compTest)
         {
+            // Validate required fields: SHIFT_DATE, SHIFT, SHIFT_HALF, LINE_NBR
+            if (compTest.Shift_Date == null || compTest.Shift == null || compTest.Shift_Half == null || compTest.Line_Nbr == null)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Validation Error",
+                    Detail = "Shift Date, Shift, Shift Half and Line # are required.",
+                    Duration = 4000
+                });
+                return;
+            }
+
             await CompTestService.UpdateCompTestAsync(compTest);
             DialogService.Close(compTest);
         }

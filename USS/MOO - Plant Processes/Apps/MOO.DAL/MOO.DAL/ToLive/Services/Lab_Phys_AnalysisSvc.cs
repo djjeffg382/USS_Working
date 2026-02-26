@@ -125,11 +125,10 @@ namespace MOO.DAL.ToLive.Services
             cols.AppendLine($"{ta}lab_phys_analysis_id {ColPrefix}lab_phys_analysis_id, ");
             cols.AppendLine($"{ta}lab_phys_type_id {ColPrefix}lab_phys_type_id, {ta}line_nbr {ColPrefix}line_nbr, ");
             cols.AppendLine($"{ta}analysis_date {ColPrefix}analysis_date, {ta}shift_date8 {ColPrefix}shift_date8, ");
+            cols.AppendLine($"{ta}shift_half8 {ColPrefix}shift_half8, ");
             cols.AppendLine($"{ta}shift_nbr8 {ColPrefix}shift_nbr8, {ta}shift_date12 {ColPrefix}shift_date12, ");
             cols.AppendLine($"{ta}shift_nbr12 {ColPrefix}shift_nbr12, {ta}update_date {ColPrefix}update_date, ");
-            cols.AppendLine($"{ta}last_update_by {ColPrefix}last_update_by, {ta}authorized_by {ColPrefix}authorized_by, ");
-            cols.AppendLine($"{ta}defaults_used {ColPrefix}defaults_used, {ta}shift_half8 {ColPrefix}shift_half8, ");
-            cols.AppendLine($"{ta}start_wgt {ColPrefix}start_wgt, ");
+            cols.AppendLine($"{ta}last_update_by {ColPrefix}last_update_by, {ta}start_wgt {ColPrefix}start_wgt, ");
             cols.AppendLine($"{ta}inch_1_wgt {ColPrefix}inch_1_wgt, {ta}inch_1_pct {ColPrefix}inch_1_pct, ");
             cols.AppendLine($"{ta}inch_3_4_wgt {ColPrefix}inch_3_4_wgt, {ta}inch_3_4_pct {ColPrefix}inch_3_4_pct, ");
             cols.AppendLine($"{ta}inch_5_8_wgt {ColPrefix}inch_5_8_wgt, {ta}inch_5_8_pct {ColPrefix}inch_5_8_pct, ");
@@ -155,7 +154,8 @@ namespace MOO.DAL.ToLive.Services
             cols.AppendLine($"{ta}mesh_270_wgt {ColPrefix}mesh_270_wgt, {ta}mesh_270_pct {ColPrefix}mesh_270_pct, ");
             cols.AppendLine($"{ta}mesh_325_wgt {ColPrefix}mesh_325_wgt, {ta}mesh_325_pct {ColPrefix}mesh_325_pct, ");
             cols.AppendLine($"{ta}mesh_400_wgt {ColPrefix}mesh_400_wgt, {ta}mesh_400_pct {ColPrefix}mesh_400_pct, ");
-            cols.AppendLine($"{ta}mesh_500_wgt {ColPrefix}mesh_500_wgt, {ta}mesh_500_pct {ColPrefix}mesh_500_pct");
+            cols.AppendLine($"{ta}mesh_500_wgt {ColPrefix}mesh_500_wgt, {ta}mesh_500_pct {ColPrefix}mesh_500_pct,");
+            cols.AppendLine($"{ta}authorized_by {ColPrefix}authorized_by, {ta}defaults_used {ColPrefix}defaults_used");
             return cols.ToString();
         }
         private static string GetSelect()
@@ -188,26 +188,24 @@ namespace MOO.DAL.ToLive.Services
             StringBuilder sql = new();
             sql.AppendLine("INSERT INTO tolive.Lab_Phys_Analysis(");
             sql.AppendLine("lab_phys_analysis_id, lab_phys_type_id, line_nbr, analysis_date, shift_date8, ");
-            sql.AppendLine("shift_nbr8, shift_date12, shift_nbr12, update_date, last_update_by, authorized_by, ");
-            sql.AppendLine("defaults_used, shift_half8, start_wgt,");
+            sql.AppendLine("shift_nbr8, shift_half8, shift_date12, shift_nbr12, update_date, last_update_by, start_wgt,");
             sql.AppendLine("inch_1_wgt, inch_3_4_wgt, inch_5_8_wgt,");
             sql.AppendLine("inch_9_16_wgt, inch_1_2_wgt, inch_7_16_wgt, inch_3_8_wgt, ");
             sql.AppendLine("inch_1_4_wgt, mesh_3_wgt, mesh_4_wgt, mesh_6_wgt, mesh_8_wgt, ");
             sql.AppendLine("mesh_10_12_wgt, mesh_14_16_wgt, mesh_20_wgt, mesh_28_30_wgt, ");
             sql.AppendLine("mesh_35_40_wgt, mesh_48_50_wgt, mesh_65_70_wgt, mesh_100_wgt, ");
             sql.AppendLine("mesh_150_140_wgt, mesh_200_wgt, mesh_270_wgt, mesh_325_wgt, ");
-            sql.AppendLine("mesh_400_wgt, mesh_500_wgt)");
+            sql.AppendLine("mesh_400_wgt, mesh_500_wgt, authorized_by, defaults_used)");
             sql.AppendLine("VALUES(");
             sql.AppendLine(":lab_phys_analysis_id, :lab_phys_type_id, :line_nbr, :analysis_date, :shift_date8, ");
-            sql.AppendLine(":shift_nbr8, :shift_date12, :shift_nbr12, :update_date, :last_update_by, :authorized_by, ");
-            sql.AppendLine(":defaults_used, :shift_half8, :start_wgt, ");
+            sql.AppendLine(":shift_nbr8, :shift_half8, :shift_date12, :shift_nbr12, :update_date, :last_update_by, :start_wgt, ");
             sql.AppendLine(":inch_1_wgt, :inch_3_4_wgt, :inch_5_8_wgt, ");
             sql.AppendLine(":inch_9_16_wgt, :inch_1_2_wgt, :inch_7_16_wgt, :inch_3_8_wgt, ");
             sql.AppendLine(":inch_1_4_wgt, :mesh_3_wgt, :mesh_4_wgt, :mesh_6_wgt, :mesh_8_wgt, ");
             sql.AppendLine(":mesh_10_12_wgt, :mesh_14_16_wgt, :mesh_20_wgt, :mesh_28_30_wgt, ");
             sql.AppendLine(":mesh_35_40_wgt, :mesh_48_50_wgt, :mesh_65_70_wgt, :mesh_100_wgt, ");
             sql.AppendLine(":mesh_150_140_wgt, :mesh_200_wgt, :mesh_270_wgt, :mesh_325_wgt, ");
-            sql.AppendLine(":mesh_400_wgt, :mesh_500_wgt)");
+            sql.AppendLine(":mesh_400_wgt, :mesh_500_wgt, :authorized_by, :defaults_used)");
             OracleCommand ins = new(sql.ToString(), conn);
             ins.BindByName = true;
             ins.Parameters.Add("lab_phys_analysis_id", obj.Lab_Phys_Analysis_Id);
@@ -216,13 +214,11 @@ namespace MOO.DAL.ToLive.Services
             ins.Parameters.Add("analysis_date", obj.Analysis_Date);
             ins.Parameters.Add("shift_date8", obj.Shift_Date8);
             ins.Parameters.Add("shift_nbr8", obj.Shift_Nbr8);
+            ins.Parameters.Add("shift_half8", obj.Shift_Half8);
             ins.Parameters.Add("shift_date12", obj.Shift_Date12);
             ins.Parameters.Add("shift_nbr12", obj.Shift_Nbr12);
             ins.Parameters.Add("update_date", DateTime.Now);
             ins.Parameters.Add("last_update_by", obj.Last_Update_By);
-            ins.Parameters.Add("authorized_by", (object?)obj.Authorized_By ?? DBNull.Value);
-            ins.Parameters.Add("defaults_used", obj.Defaults_Used ? 1 : 0);
-            ins.Parameters.Add("shift_half8", (object?)obj.Shift_Half8 ?? DBNull.Value);
             ins.Parameters.Add("start_wgt", obj.Start_Wgt);
             ins.Parameters.Add("inch_1_wgt", obj.Inch_1_Wgt);
             ins.Parameters.Add("inch_3_4_wgt", obj.Inch_3_4_Wgt);
@@ -250,6 +246,8 @@ namespace MOO.DAL.ToLive.Services
             ins.Parameters.Add("mesh_325_wgt", obj.Mesh_325_Wgt);
             ins.Parameters.Add("mesh_400_wgt", obj.Mesh_400_Wgt);
             ins.Parameters.Add("mesh_500_wgt", obj.Mesh_500_Wgt);
+            ins.Parameters.Add("authorized_by", obj.Authorized_By);
+            ins.Parameters.Add("defaults_used", obj.Defaults_Used ? 1:0);
             int recsAffected = MOO.Data.ExecuteNonQuery(ins);
             return recsAffected;
         }
@@ -274,13 +272,11 @@ namespace MOO.DAL.ToLive.Services
             sql.AppendLine("analysis_date = :analysis_date, ");
             sql.AppendLine("shift_date8 = :shift_date8, ");
             sql.AppendLine("shift_nbr8 = :shift_nbr8, ");
+            sql.AppendLine("shift_half8 = :shift_half8, ");
             sql.AppendLine("shift_date12 = :shift_date12, ");
             sql.AppendLine("shift_nbr12 = :shift_nbr12, ");
             sql.AppendLine("update_date = :update_date, ");
             sql.AppendLine("last_update_by = :last_update_by, ");
-            sql.AppendLine("authorized_by = :authorized_by, ");
-            sql.AppendLine("defaults_used = :defaults_used, ");
-            sql.AppendLine("shift_half8 = :shift_half8, ");
             sql.AppendLine("start_wgt = :start_wgt, ");
             sql.AppendLine("inch_1_wgt = :inch_1_wgt, ");
             sql.AppendLine("inch_3_4_wgt = :inch_3_4_wgt, ");
@@ -307,7 +303,9 @@ namespace MOO.DAL.ToLive.Services
             sql.AppendLine("mesh_270_wgt = :mesh_270_wgt, ");
             sql.AppendLine("mesh_325_wgt = :mesh_325_wgt, ");
             sql.AppendLine("mesh_400_wgt = :mesh_400_wgt, ");
-            sql.AppendLine("mesh_500_wgt = :mesh_500_wgt");
+            sql.AppendLine("mesh_500_wgt = :mesh_500_wgt,");
+            sql.AppendLine("authorized_by = :authorized_by,");
+            sql.AppendLine("defaults_used = :defaults_used");
             sql.AppendLine("WHERE lab_phys_analysis_id = :lab_phys_analysis_id");
             OracleCommand upd = new(sql.ToString(), conn);
             upd.BindByName = true;
@@ -316,13 +314,11 @@ namespace MOO.DAL.ToLive.Services
             upd.Parameters.Add("analysis_date", obj.Analysis_Date);
             upd.Parameters.Add("shift_date8", obj.Shift_Date8);
             upd.Parameters.Add("shift_nbr8", obj.Shift_Nbr8);
+            upd.Parameters.Add("shift_half8", obj.Shift_Half8);
             upd.Parameters.Add("shift_date12", obj.Shift_Date12);
             upd.Parameters.Add("shift_nbr12", obj.Shift_Nbr12);
             upd.Parameters.Add("update_date", DateTime.Now);
             upd.Parameters.Add("last_update_by", obj.Last_Update_By);
-            upd.Parameters.Add("authorized_by", (object?)obj.Authorized_By ?? DBNull.Value);
-            upd.Parameters.Add("defaults_used", obj.Defaults_Used ? 1 : 0);
-            upd.Parameters.Add("shift_half8", (object?)obj.Shift_Half8 ?? DBNull.Value);
             upd.Parameters.Add("start_wgt", obj.Start_Wgt);
             upd.Parameters.Add("inch_1_wgt", obj.Inch_1_Wgt);
             upd.Parameters.Add("inch_3_4_wgt", obj.Inch_3_4_Wgt);
@@ -350,6 +346,8 @@ namespace MOO.DAL.ToLive.Services
             upd.Parameters.Add("mesh_325_wgt", obj.Mesh_325_Wgt);
             upd.Parameters.Add("mesh_400_wgt", obj.Mesh_400_Wgt);
             upd.Parameters.Add("mesh_500_wgt", obj.Mesh_500_Wgt);
+            upd.Parameters.Add("authorized_by", obj.Authorized_By);
+            upd.Parameters.Add("defaults_used", obj.Defaults_Used ? 1 : 0);
             upd.Parameters.Add("lab_phys_analysis_id", obj.Lab_Phys_Analysis_Id);
             int recsAffected = MOO.Data.ExecuteNonQuery(upd);
             return recsAffected;
@@ -387,13 +385,14 @@ namespace MOO.DAL.ToLive.Services
             RetVal.Analysis_Date = (DateTime)Util.GetRowVal(row, $"{ColPrefix}analysis_date");
             RetVal.Shift_Date8 = (DateTime)Util.GetRowVal(row, $"{ColPrefix}shift_date8");
             RetVal.Shift_Nbr8 = (short)Util.GetRowVal(row, $"{ColPrefix}shift_nbr8");
+            RetVal.Shift_Half8 = (short?)Util.GetRowVal(row, $"{ColPrefix}shift_half8");
             RetVal.Shift_Date12 = (DateTime)Util.GetRowVal(row, $"{ColPrefix}shift_date12");
             RetVal.Shift_Nbr12 = (short)Util.GetRowVal(row, $"{ColPrefix}shift_nbr12");
             RetVal.Update_Date = (DateTime)Util.GetRowVal(row, $"{ColPrefix}update_date");
             RetVal.Last_Update_By = (string)Util.GetRowVal(row, $"{ColPrefix}last_update_by");
-            RetVal.Authorized_By = (string?)Util.GetRowVal(row, $"{ColPrefix}authorized_by");
-            RetVal.Defaults_Used = Convert.ToInt32(Util.GetRowVal(row, $"{ColPrefix}defaults_used") ?? 0) != 0;
-            RetVal.Shift_Half8 = (byte?)Util.GetRowVal(row, $"{ColPrefix}shift_half8");
+            RetVal.Authorized_By = (string)Util.GetRowVal(row, $"{ColPrefix}authorized_by");
+            RetVal.Defaults_Used = (short)Util.GetRowVal(row, $"{ColPrefix}defaults_used")==1;
+
             RetVal.Start_Wgt = (double?)Util.GetRowVal(row, $"{ColPrefix}start_wgt");
             RetVal.Inch_1_Wgt = (double?)Util.GetRowVal(row, $"{ColPrefix}inch_1_wgt");
             RetVal.Inch_3_4_Wgt = (double?)Util.GetRowVal(row, $"{ColPrefix}inch_3_4_wgt");

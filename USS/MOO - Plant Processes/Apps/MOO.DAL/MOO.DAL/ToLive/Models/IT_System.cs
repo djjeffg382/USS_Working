@@ -27,9 +27,11 @@ namespace MOO.DAL.ToLive.Models
             [Display(Name = "REST or SOAP API")]
             WebAPI,
 
-
             [Display(Name = "Windows Service")]
             WindowsService,
+
+            [Display(Name = "Windows Desktop Application")]
+            WindowsDesktop,
 
             [Display(Name = "Library")]
             Library,
